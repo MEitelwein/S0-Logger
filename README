@@ -177,12 +177,6 @@ equipped with sudo rights.
     Polling interval is set to 30s here, any value > 0 is ok.
     
           define powermeter HTTPMOD http://<HOSTNAME>/s0/electricity.html 30
-          attr   powermeter get01JSON data_power
-          attr   powermeter get01Name power
-          attr   powermeter get02JSON data_energy
-          attr   powermeter get02Name energy
-          attr   powermeter get03JSON data_time
-          attr   powermeter get03Name time
           attr   powermeter getHeader1 Content-Type: application/json
           attr   powermeter getHeader2 Accept: */*
           attr   powermeter icon measure_power_meter
