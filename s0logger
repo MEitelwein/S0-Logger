@@ -1,6 +1,6 @@
 #! /bin/sh
 ### BEGIN INIT INFO
-# Provides:          Stromzaehler starten: S0-Schnittstelle per ISR auswerten und Textdatei schreiben
+# Provides:          Start s0-logger: Listen to trigger on GPIO and update values
 # Required-Start:
 # Required-Stop:
 # Default-Start:     2 3 4 5
@@ -8,7 +8,8 @@
 # Short-Description: Kurze Beschreibung
 # Description:       Längere Bechreibung
 ### END INIT INFO
-# Author: Johannes Weber (johannes@webernetz.net)
+# Initial version by Johannes Weber (johannes@webernetz.net)
+# Author: Michael Eitelwein (michael@eitelwein.net)
  
 # Aktionen
 case "$1" in
