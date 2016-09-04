@@ -54,9 +54,9 @@ Connecting this to the GPIO ports of a microcontroller is simple:
                       GND of power source
        
 
-The pull-down resistor should have between 2k to 5k Ohm. It actually 
-matters not too much which value it has as the pin is pulled to 3V3 
-only for 30ms to 90 ms depending on the powermeter.
+The pull-down resistor should have between 2k to 5k Ohm. The value actually
+does not matter too much as the pin is pulled to 3V3 only for 30ms to 90 ms 
+depending on the powermeter.
 
 As a power source I use a stabilized 5V source like this one
   Mean Well Hutschienennetzteil DR-15-5 , 5V
@@ -67,7 +67,7 @@ Installation and Configuration
 ==============================
 
 When the standard Debian is running on the CHIP, log in as your favorite user
-which has sudo rights.
+equipped with sudo rights.
 
 1.) Install Adafruit GPIO Library for CHIP. Many thanks to Robert Wolterman
     for porting the library to CHIP
@@ -92,7 +92,7 @@ which has sudo rights.
 
 
 2.) I prefer mounting tmpfs filesystems to not overburden the flash 
-    memmory with transient data.
+    memory with transient data.
 
       $ sudo mkdir -p /var/www/html/s0
       $ sudo vim /etc/fstab
@@ -100,6 +100,8 @@ which has sudo rights.
             # UNCONFIGURED FSTAB FOR BASE SYSTEM
             none   /var/www/html/s0   tmpfs  defaults  0  1
             none   /var/log/apache2   tmpfs  defaults  0  1
+
+      $ sudo mount -a
 
 
 3.) Install the s0logger scripts 
@@ -118,7 +120,7 @@ which has sudo rights.
       $ sudo /etc/init.d/s0logger start
 
     and check the outoput at http://<CHIP-HOSTNAME>/s0/electricity.html.
-    It should produce a JSON output like the following
+    It should produce a JSON output like the following (all in one line)
     
            { "data": { 
                        "energy": "34605938.0" , 
@@ -142,7 +144,7 @@ which has sudo rights.
 
 
 6.) The script uses the config file /etc/s0logger which it creates 
-    automatically. The parameters are selfexplaining, it will also be 
+    automatically. The parameters are self-explaining, it will also be 
     used to cache the total energy when the script is not running.
     Here is the default config, only change values in [Config]
 
@@ -159,6 +161,9 @@ which has sudo rights.
     Typically, you need to check how many triggers your powermeter 
     creates per kWh of consumed energy. Mine all have 1000 triggers 
     per kWh, but also 2000 per kWh is common.
+    Rereading the config requires issuing
+
+      $ sudo /etc/init.d/s0logger restart
 
 
 7.) If everything works as expected, configure the CHIP to start
@@ -169,6 +174,7 @@ which has sudo rights.
 
 8.) Define a new HTTPMOD device in FHEM and enjoy the result!
     You need to replace <HOSTNAME> with the microcontroller's hostname.
+    Polling interval is set to 30s here, any value > 0 is ok.
     
           define powermeter HTTPMOD http://<HOSTNAME>/s0/electricity.html 30
           attr   powermeter get01JSON data_power
