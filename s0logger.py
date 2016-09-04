@@ -2,8 +2,8 @@
 # Using port of Adafruit GPIO librar 
 # for CHIP board of The Next Thing Corp
 # 
-# (c) Michael Eitelwein, 2016
-# email: michael@eitelwein.net
+# Author: Michael Eitelwein (michael@eitelwein.net)
+#         https://github.com/MEitelwein/S0-Logger
 #
 # S0 enabled electricity meters send a S0 signal every tickPerkWh
 # The S0 tick is detected at the GPIO pin of the CHIP device
