@@ -1,0 +1,25 @@
+Required defines to read the s0logger data via HTTP in FHEM
+Replace <HOSTNAME> with the hostname of your logger and
+check the correct path matching you htmlFile in the configs /etc/s0logger
+
+-------------- FHEM defines --------------------
+define powermeter HTTPMOD http://<HOSTNAME>/s0/electricity.html 30
+attr powermeter get01JSON data_power
+attr powermeter get01Name power
+attr powermeter get02JSON data_energy
+attr powermeter get02Name energy
+attr powermeter get03JSON data_time
+attr powermeter get03Name time
+attr powermeter getHeader1 Content-Type: application/json
+attr powermeter getHeader2 Accept: */*
+attr powermeter icon measure_power_meter
+attr powermeter reading01Format %.1f
+attr powermeter reading01JSON data_power
+attr powermeter reading01Name power
+attr powermeter reading02Expr $val / 1000
+attr powermeter reading02Format %.3f
+attr powermeter reading02JSON data_energy
+attr powermeter reading02Name energy
+attr powermeter reading03JSON data_time
+attr powermeter reading03Name time
+attr powermeter stateFormat {sprintf("Energy consumed %.3f kWh, Current power %.1f W", ReadingsVal($name,"energy",0), ReadingsVal($name,"power",0))}

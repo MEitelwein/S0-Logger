@@ -1,0 +1,174 @@
+README of S0-Logger for digital powermeters, CHIP and FHEM
+
+Author: Michael Eitelwein (michael@eitelwein.net)
+
+Description
+===========
+Many digital power meters have a S0 interface to export energy consumption.
+Typically they create a trigger signal every x Wh consumed power. My
+meter is sending a 30ms trigger every 1 Wh consumed.
+
+This signal can be read with the GPIO pins of common microcontroller boards 
+like RaspberryPi, Arduino or others. As it is based on the Adafruit GPIO
+library, it is easy to port to many different microcontroller boards.
+
+I am using one of the cheap CHIP boards of The Next Thing Corp 
+(https://www.nextthing.co/), which provides full Debian linux, GPIO and WLAN
+for about $9 USD (!). It is easy to setup and use and very 
+compatible to RaspberryPI stuff.
+
+My SmartHome is managed by the open source solution FHEM, which is perfectly
+configurable and programmable - you need to love PERL though :-)
+FHEM can simply add a new device which parses HTML output of a sensor. JSON
+data can be interpreted directly, which makes it very easy to deal with
+LAN or WLAN enabled microcontrollers.
+
+
+Wiring
+======
+The power meter usually provides a S0- and S0+ connector which is internally
+connected to an optocoppler. At every trigger it short circuits S0+ and S0-.
+
+Consequently connecting it to the GPIO is simple:
+
+                      5V stabilized power source
+                              +
+                              |
+     CHIP PINs                |                          
+     =========                |
+     CHG-IN    +--------------+                          Powermeter PINs
+                                                         =================
+     VCC-3V3   +--------------------------------------+  S0+
+       
+     XIO-P1    +--------------+-----------------------+  S0-
+                              |
+                              R pull-down resistor
+                              |
+     GND       +--------------+
+                              |
+                              |
+                              |
+                              +
+                      GND of power source
+       
+
+The pull-down resistor should have between 2k to 5k ohm, it does not 
+matter too much which value it has as the pin is pulled to high 
+only for 30ms to 90 ms depending on the powermeter.
+
+As a power source I use a stabilized 5V source like this one
+  Mean Well Hutschienennetzteil DR-15-5 , 5V
+  http://www.elv.de/mean-well-hutschienennetzteil-dr-15-5-5v.html
+
+
+Installation and Configuration
+==============================
+
+When the standard Debian is running on the CHIP, a couple of installation 
+setps are required
+
+1.) Install Adafruit GPIO Library for CHIP. Many thanks to Robert Wolterman
+    for porting the library to CHIP!
+
+      $ sudo apt-get update
+      $ sudo apt-get install python git apache2
+      $ sudo apt-get install build-essential python-dev python-pip 
+      $ sudo apt-get install python-smbus flex bison
+      $ git clone https://github.com/atenart/dtc
+      $ cd dtc
+      $ make
+      $ sudo make install PREFIX=/usr
+      $ cd ..
+      $ git clone https://github.com/xtacocorex/CHIP_IO.git
+      $ cd CHIP_IO
+      $ sudo python setup.py install
+      $ cd ..
+      $ sudo rm -rf CHIP_IO
+      $ git clone https://github.com/xtacocorex/Adafruit_Python_GPIO.git
+      $ cd Adafruit_Python_GPIO
+      $ sudo python setup.py install
+      $ cd ..
+
+2.) I prefer mounting tmpfs filesystems to not overburden the flash 
+    memmory with transient data.
+
+      $ sudo mkdir -p /var/www/html/s0
+      $ sudo vim /etc/fstab
+
+            # UNCONFIGURED FSTAB FOR BASE SYSTEM
+            none   /var/www/html/s0   tmpfs  defaults  0  1
+            none   /var/log/apache2   tmpfs  defaults  0  1
+
+3.) Install the python scripts 
+
+      $ git clone https://github.com/MEitelwein/S0-Logger
+      $ sudo cp S0-Logger/s0logger /etc/init.d
+      $ sudo mkdir -p /root/scripts
+      $ sudo cp S0-Logger/s0logger.py /root/scripts
+      $ sudo update-rc.d s0logger defaults
+
+4.) Connect your powermeter as explained above
+
+5.) Start the script and check the outoput at 
+    http://<CHIP-HOSTNAME>/s0/electricity.html. It should produce a JSON 
+    output like the following
+    
+           { "data": { 
+                       "energy": "34605938.0" , 
+                       "power": "972.642790514" , 
+                       "time": "09.04.2016 10:58:13 CET" , 
+                       "dtime": "3.70125603676" 
+                     }, 
+             "units": { 
+                       "energy": "Wh" , 
+                       "power": "W" , 
+                       "dtime": "s" 
+                      }
+           }
+
+    If it does not work, set DEBUG to True and watch the output 
+    (see next section 6).
+
+6.) The script uses the config file /etc/s0logger which it creates 
+    automatically. The parameters are selfexplaining, it will also be 
+    used to cache the total energy when the script is not running.
+    Here is the default config, only change values in [Config]
+
+           [Config]
+           pidfile = /var/run/s0logger.pid
+           htmlfile = /var/www/html/s0/electricity.html
+           debug = False
+           s0pin = XIO-P1
+           ticksperkwh = 1000
+
+           [Cache]
+           energy = 0
+
+    Typically, you need to check how many triggers your powermeter 
+    creates per kWh of consumed energy. Mine all have 1000 triggers 
+    per kWh, but also 2000 per kWh is common.
+
+7.) Define a new HTTPMOD device in FHEM and enjoy the result!
+    You need to replace <HOSTNAME> with the microcontroller's hostname.
+    
+          define powermeter HTTPMOD http://<HOSTNAME>/s0/electricity.html 30
+          attr   powermeter get01JSON data_power
+          attr   powermeter get01Name power
+          attr   powermeter get02JSON data_energy
+          attr   powermeter get02Name energy
+          attr   powermeter get03JSON data_time
+          attr   powermeter get03Name time
+          attr   powermeter getHeader1 Content-Type: application/json
+          attr   powermeter getHeader2 Accept: */*
+          attr   powermeter icon measure_power_meter
+          attr   powermeter reading01Format %.1f
+          attr   powermeter reading01JSON data_power
+          attr   powermeter reading01Name power
+          attr   powermeter reading02Expr $val / 1000
+          attr   powermeter reading02Format %.3f
+          attr   powermeter reading02JSON data_energy
+          attr   powermeter reading02Name energy
+          attr   powermeter reading03JSON data_time
+          attr   powermeter reading03Name time
+          attr   powermeter stateFormat {sprintf("Energy consumed %.3f kWh, Current power %.1f W", ReadingsVal($name,"energy",0), ReadingsVal($name,"power",0))} 
+
