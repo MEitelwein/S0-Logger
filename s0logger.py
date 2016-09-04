@@ -105,7 +105,8 @@ def S0Trigger(channel):
     # dTime in [s]
     dEnergy  = 1000 / ticksKWH;
     dTime    = triggerTime - lastTrigger
-    power    = dEnergy / (dTime / 3600)
+    energy  += dEnergy
+    power    = dEnergy * 3600 / dTime
     if DEBUG:
         logMsg("Trigger at " + tStr + " after " + str(dTime) + " seconds, at " + str(energy/1000) + "kWh, consuming " + str(power) + "W")
     writeHTML(str(energy), str(power), tStr, str(dTime))
