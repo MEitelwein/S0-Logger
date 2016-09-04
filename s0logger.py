@@ -214,7 +214,7 @@ try:
     while True:
         # WAIT FOR EDGE
         if DEBUG:
-            logMsg("Waiting...")
+            logMsg('Waiting... (' + str(counter) + ' ticks logged)')
         time.sleep(1)
 except:
     pass
