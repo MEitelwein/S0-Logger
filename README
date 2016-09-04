@@ -9,28 +9,29 @@ Typically they create a trigger signal every x Wh consumed power. My
 meter is sending a 30ms trigger every 1 Wh consumed.
 
 This signal can be read with the GPIO pins of common microcontroller boards 
-like RaspberryPi, Arduino or others. As it is based on the Adafruit GPIO
-library, it is easy to port to many different microcontroller boards.
+like RaspberryPi, Arduino or others. As this solution is based on the 
+Adafruit GPIO library, it is easy to port to many different 
+microcontroller boards.
 
-I am using one of the cheap CHIP boards of The Next Thing Corp 
+I am using one of the cheap CHIP boards of Next Thing Corp 
 (https://www.nextthing.co/), which provides full Debian linux, GPIO and WLAN
 for about $9 USD (!). It is easy to setup and use and very 
 compatible to RaspberryPI stuff.
 
 My SmartHome is managed by the open source solution FHEM, which is perfectly
 configurable and programmable - you need to love PERL though :-)
-FHEM can simply add a new device which parses HTML output of a sensor. JSON
-data can be interpreted directly, which makes it very easy to deal with
-LAN or WLAN enabled microcontrollers.
-More info about FHEM can be found at http://fhem.de
+FHEM can simply add a new device by parsing the HTML output of a web-capable 
+sensor. JSON data can be interpreted directly, which makes it very easy to 
+deal with complex data transfers. More info about FHEM can be found at 
+http://fhem.de
 
 
 Wiring
 ======
-The power meter usually provides a S0- and S0+ connector which is internally
+The power meter usually provides a S0- and S0+ port being internally
 connected to an optocoppler. At every trigger it short circuits S0+ and S0-.
 
-Consequently connecting it to the GPIO is simple:
+Connecting this to the GPIO ports of a microcontroller is simple:
 
                       5V stabilized power source
                               +
@@ -53,8 +54,8 @@ Consequently connecting it to the GPIO is simple:
                       GND of power source
        
 
-The pull-down resistor should have between 2k to 5k ohm, it does not 
-matter too much which value it has as the pin is pulled to high 
+The pull-down resistor should have between 2k to 5k Ohm. It actually 
+matters not too much which value it has as the pin is pulled to 3V3 
 only for 30ms to 90 ms depending on the powermeter.
 
 As a power source I use a stabilized 5V source like this one
@@ -65,11 +66,11 @@ As a power source I use a stabilized 5V source like this one
 Installation and Configuration
 ==============================
 
-When the standard Debian is running on the CHIP, a couple of installation 
-setps are required
+When the standard Debian is running on the CHIP, log in as your favorite user
+which has sudo rights.
 
 1.) Install Adafruit GPIO Library for CHIP. Many thanks to Robert Wolterman
-    for porting the library to CHIP!
+    for porting the library to CHIP
 
       $ sudo apt-get update
       $ sudo apt-get install python git apache2
@@ -84,11 +85,11 @@ setps are required
       $ cd CHIP_IO
       $ sudo python setup.py install
       $ cd ..
-      $ sudo rm -rf CHIP_IO
       $ git clone https://github.com/xtacocorex/Adafruit_Python_GPIO.git
       $ cd Adafruit_Python_GPIO
       $ sudo python setup.py install
       $ cd ..
+
 
 2.) I prefer mounting tmpfs filesystems to not overburden the flash 
     memmory with transient data.
@@ -100,19 +101,24 @@ setps are required
             none   /var/www/html/s0   tmpfs  defaults  0  1
             none   /var/log/apache2   tmpfs  defaults  0  1
 
-3.) Install the python scripts 
+
+3.) Install the s0logger scripts 
 
       $ git clone https://github.com/MEitelwein/S0-Logger
       $ sudo cp S0-Logger/s0logger /etc/init.d
       $ sudo mkdir -p /root/scripts
       $ sudo cp S0-Logger/s0logger.py /root/scripts
-      $ sudo update-rc.d s0logger defaults
+
 
 4.) Connect your powermeter as explained above
 
-5.) Start the script and check the outoput at 
-    http://<CHIP-HOSTNAME>/s0/electricity.html. It should produce a JSON 
-    output like the following
+
+5.) Start the script with 
+
+      $ sudo /etc/init.d/s0logger start
+
+    and check the outoput at http://<CHIP-HOSTNAME>/s0/electricity.html.
+    It should produce a JSON output like the following
     
            { "data": { 
                        "energy": "34605938.0" , 
@@ -129,6 +135,11 @@ setps are required
 
     If it does not work, set DEBUG to True and watch the output 
     (see next section 6).
+
+    The script can be stopped with
+
+      $ sudo /etc/init.d/s0logger stop
+
 
 6.) The script uses the config file /etc/s0logger which it creates 
     automatically. The parameters are selfexplaining, it will also be 
@@ -149,7 +160,14 @@ setps are required
     creates per kWh of consumed energy. Mine all have 1000 triggers 
     per kWh, but also 2000 per kWh is common.
 
-7.) Define a new HTTPMOD device in FHEM and enjoy the result!
+
+7.) If everything works as expected, configure the CHIP to start
+    s0logger at boot time
+
+      $ sudo update-rc.d s0logger defaults
+
+
+8.) Define a new HTTPMOD device in FHEM and enjoy the result!
     You need to replace <HOSTNAME> with the microcontroller's hostname.
     
           define powermeter HTTPMOD http://<HOSTNAME>/s0/electricity.html 30
