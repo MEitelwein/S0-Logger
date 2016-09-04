@@ -13,7 +13,7 @@ like RaspberryPi, Arduino or others. As this solution is based on the
 Adafruit GPIO library, it is easy to port to many different 
 microcontroller boards.
 
-I am using one of the cheap CHIP boards of Next Thing Corp 
+I am using one of the nice CHIP boards of Next Thing Corp 
 (https://www.nextthing.co/), which provides full Debian linux, GPIO and WLAN
 for about $9 USD (!). It is easy to setup and use and very 
 compatible to RaspberryPI stuff.
