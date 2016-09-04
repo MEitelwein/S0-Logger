@@ -1,4 +1,4 @@
-README of S0-Logger for digital powermeters, CHIP and FHEM
+S0-Logger for digital powermeters, using a CHIP microcontroller and FHEM
 
 Author: Michael Eitelwein (michael@eitelwein.net)
 
@@ -22,6 +22,7 @@ configurable and programmable - you need to love PERL though :-)
 FHEM can simply add a new device which parses HTML output of a sensor. JSON
 data can be interpreted directly, which makes it very easy to deal with
 LAN or WLAN enabled microcontrollers.
+More info about FHEM can be found at http://fhem.de
 
 
 Wiring
