@@ -72,20 +72,23 @@ class Zone(tzinfo):
 
 ### Write data to html file
 ### ------------------------------------------------
-def writeHTML(energy, power, time, dTime):
+def writeHTML(energy, power, time, dTime, ticks):
     f = open(htmlFile, 'w')
     f.truncate()
     f.write('{')
     f.write('    \"data\": {')
-    f.write('                \"energy\": \"' + energy + '\"')
-    f.write('              , \"power\": \"'  + power  + '\"')
-    f.write('              , \"time\": \"'   + time   + '\"')
-    f.write('              , \"dtime\": \"'  + dTime  + '\"')
+    f.write('                \"energy\": \"'   + energy + '\"')
+    f.write('              , \"power\": \"'    + power  + '\"')
+    f.write('              , \"time\": \"'     + time   + '\"')
+    f.write('              , \"dtime\": \"'    + dTime  + '\"')
+    f.write('              , \"S0-ticks\": \"' + ticks  + '\"')
     f.write('               },')
     f.write('    \"units\": {')
     f.write('                \"energy\": \"Wh\"')
     f.write('              , \"power\": \"W\"')
+    f.write('              , \"time\": \"\"')
     f.write('              , \"dtime\": \"s\"')
+    f.write('              , \"S0-ticks\": \"\"')
     f.write('               }')
     f.write('}')
     f.close()
@@ -109,7 +112,7 @@ def S0Trigger(channel):
     power    = dEnergy * 3600 / dTime
     if DEBUG:
         logMsg("Trigger at " + tStr + " after " + str(dTime) + " seconds, at " + str(energy/1000) + "kWh, consuming " + str(power) + "W")
-    writeHTML(str(energy), str(power), tStr, str(dTime))
+    writeHTML(str(energy), str(power), tStr, str(dTime), str(counter))
     lastTrigger = triggerTime
 
 
@@ -200,7 +203,7 @@ pf.close()
 syslog.openlog(ident="S0-Logger",logoption=syslog.LOG_PID, facility=syslog.LOG_LOCAL0)
 
 # Create htmlFile already on startup
-writeHTML(str(energy), '0', datetime.now(CET).strftime('%m.%d.%Y %H:%M:%S %Z'), '0')
+writeHTML(str(energy), '0', datetime.now(CET).strftime('%m.%d.%Y %H:%M:%S %Z'), '0', str(counter))
 
 logMsg("Setting up S0-Logger on " + s0Pin)
 GPIO.setup(s0Pin, GPIO.IN, GPIO.PUD_DOWN)
