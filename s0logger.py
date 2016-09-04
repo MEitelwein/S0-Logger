@@ -1,6 +1,6 @@
 #!/usr/bin/python
-# Using port of Adafruit GPIO librar 
-# for CHIP board of The Next Thing Corp
+# Using port of Adafruit GPIO library 
+# for CHIP microcontroller
 # 
 # Author: Michael Eitelwein (michael@eitelwein.net)
 #         https://github.com/MEitelwein/S0-Logger
