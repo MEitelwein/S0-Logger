@@ -18,6 +18,15 @@
 # 
 # Processing of the s0 signal is indicated by the C.H.I.P.
 # status LED going on and off during GPIO processing
+# 
+# Configs in file /etc/s0logger (will be generated if not existing)
+#   debug       = True | False      Print DEBUG output
+#   pidfile     = <path/pidfile>    Where to store pid
+#   htmlfile    = <path/file>       HTML file to be generated
+#   s0pin       = <GPIO_PIN>        Which PIN to poll for s0
+#   ticksperkwh = <number of ticks> See manual of S0 signal source
+#   s0blink     = True | False      Blink status LED with S0 signal
+
 
 import CHIP_IO.GPIO as GPIO
 import time
@@ -96,12 +105,24 @@ def writeHTML(energy, power, time, dTime, ticks):
     f.close()
 
 
+### Control C.H.I.P. status LED
+### mode=1 will switch on, 0 will switch off
+### ------------------------------------------------
+def statusLED(mode):
+    if s0Blink:
+        if ( mode == 1 ):
+            # Switch C.H.I.P. status LED on
+            os.system("/usr/sbin/i2cset -f -y 0 0x34 0x93 0x1")
+        else:
+            # Switch C.H.I.P. status LED off
+            os.system("/usr/sbin/i2cset -f -y 0 0x34 0x93 0x0")
+
+
 ### Function being called by GPIO edge detection
 ### edge_handler is sending GPIO port as argument
 ### ------------------------------------------------
 def S0Trigger(channel):
-    # Switch C.H.I.P. status LED on
-    os.system("/usr/sbin/i2cset -f -y 0 0x34 0x93 0x1")
+    statusLED(1)
     global counter
     global energy
     global lastTrigger
@@ -118,8 +139,8 @@ def S0Trigger(channel):
         logMsg("Trigger at " + tStr + " after " + str(dTime) + " seconds, at " + str(energy/1000) + "kWh, consuming " + str(power) + "W")
     writeHTML(str(energy), str(power), tStr, str(dTime), str(counter))
     lastTrigger = triggerTime
-    # Switch C.H.I.P. status LED off
-    os.system("/usr/sbin/i2cset -f -y 0 0x34 0x93 0x0")
+    statusLED(0)
+
 
 ### Create config file if not existing
 ### ------------------------------------------------
@@ -197,6 +218,12 @@ if config.has_option('Config', 'S0Pin'):
 else:
     s0Pin    = 'XIO-P1'
     config.set('Config', 'S0Pin', s0Pin)
+
+if config.has_option('Config', 's0Blink'):
+    s0Blink  = config.get('Config', 's0Blink').lower() == 'true'
+else:
+    s0Blink  = True
+    config.set('Config', 's0Blink', str(s0Blink))
 
 # Write pid into pidFile
 pf = open(pidFile, 'w')
