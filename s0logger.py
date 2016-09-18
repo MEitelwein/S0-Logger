@@ -98,6 +98,8 @@ def writeHTML(energy, power, time, dTime, ticks):
 ### edge_handler is sending GPIO port as argument
 ### ------------------------------------------------
 def S0Trigger(channel):
+    # Switch C.H.I.P. status LED on
+    os.system("/usr/sbin/i2cset -f -y 0 0x34 0x93 0x1")
     global counter
     global energy
     global lastTrigger
@@ -114,7 +116,8 @@ def S0Trigger(channel):
         logMsg("Trigger at " + tStr + " after " + str(dTime) + " seconds, at " + str(energy/1000) + "kWh, consuming " + str(power) + "W")
     writeHTML(str(energy), str(power), tStr, str(dTime), str(counter))
     lastTrigger = triggerTime
-
+    # Switch C.H.I.P. status LED off
+    os.system("/usr/sbin/i2cset -f -y 0 0x34 0x93 0x0")
 
 ### Create config file if not existing
 ### ------------------------------------------------
