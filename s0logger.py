@@ -16,6 +16,8 @@
 # ticksKWH contains S0 ticks per 1 kWh
 #   (typically 1000 to 2000, check with your meter device)
 # 
+# Processing of the s0 signal is indicated by the C.H.I.P.
+# status LED going on and off during GPIO processing
 
 import CHIP_IO.GPIO as GPIO
 import time
