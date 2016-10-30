@@ -183,6 +183,11 @@ if not os.path.isfile(configFile):
     createConfig()    
 
 config.read(configFile)
+if not config.has_section('Config'):
+    DEBUG = False
+    logMsg('Config file misses section \'Config\' - will create new configuration')
+    createConfig()
+
 if config.has_option('Config', 'DEBUG'):
     DEBUG    = config.get('Config', 'DEBUG').lower() == 'true'
 else:
@@ -256,4 +261,4 @@ except:
     
 # Clean up and terminate
 cleanup()
-logMsg("S0-Logger exited")
+logMsg('S0-Logger exited')
