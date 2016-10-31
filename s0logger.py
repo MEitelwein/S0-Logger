@@ -31,7 +31,7 @@
 import CHIP_IO.GPIO as GPIO
 import time
 import os
-from datetime import datetime, tzinfo, timedelta
+import datetime
 import signal
 import sys
 import syslog
@@ -66,19 +66,11 @@ def signal_term_handler(signal, frame):
     sys.exit(0)
 
  
-### Configure datetime formats
+### Return string with date and time
 ### ------------------------------------------------
-class Zone(tzinfo):
-    def __init__(self,offset,isdst,name):
-        self.offset = offset
-        self.isdst = isdst
-        self.name = name
-    def utcoffset(self, dt):
-        return timedelta(hours=self.offset) + self.dst(dt)
-    def dst(self, dt):
-            return timedelta(hours=1) if self.isdst else timedelta(0)
-    def tzname(self,dt):
-         return self.name
+def strDateTime():
+    now = datetime.datetime.now()
+    return now.strftime("%d.%m.%Y %H:%M:%S")
 
 
 ### Write data to html file
@@ -97,7 +89,7 @@ def writeHTML(energy, power, time, dTime, ticks):
     f.write('    \"units\": {')
     f.write('                \"energy\": \"Wh\"')
     f.write('              , \"power\": \"W\"')
-    f.write('              , \"time\": \"\"')
+    f.write('              , \"time\": \"dd.mm.yyyy hh:mm:ss\"')
     f.write('              , \"dtime\": \"s\"')
     f.write('              , \"S0-ticks\": \"\"')
     f.write('               }')
@@ -126,9 +118,9 @@ def S0Trigger(channel):
     global counter
     global energy
     global lastTrigger
-    triggerTime = time.time()
-    tStr = datetime.now(CET).strftime('%m.%d.%Y %H:%M:%S %Z')
-    counter += 1
+    triggerTime =  time.time()
+    tStr        =  strDateTime()
+    counter     += 1
     # dEnergy in [Wh]
     # dTime in [s]
     dEnergy  = 1000 / ticksKWH;
@@ -176,7 +168,6 @@ def saveConfig():
 ### MAIN
 ### ===============================================
 
-CET         = Zone(1,True,'CET')
 counter     = 0
 lastTrigger = time.time()
 configFile  = "/etc/s0logger"
@@ -244,7 +235,7 @@ pf.close()
 syslog.openlog(ident="S0-Logger",logoption=syslog.LOG_PID, facility=syslog.LOG_LOCAL0)
 
 # Create htmlFile already on startup
-writeHTML(str(energy), '0', datetime.now(CET).strftime('%m.%d.%Y %H:%M:%S %Z'), '0', str(counter))
+writeHTML(str(energy), '0', strDateTime(), '0', str(counter))
 
 logMsg("Setting up S0-Logger on " + s0Pin)
 GPIO.setup(s0Pin, GPIO.IN, GPIO.PUD_DOWN)
