@@ -76,6 +76,8 @@ def strDateTime():
 ### Write data to html file
 ### ------------------------------------------------
 def writeHTML(energy, power, time, dTime, ticks):
+    global version
+    ver = str(version)
     f = open(htmlFile, 'w')
     f.truncate()
     f.write('{')
@@ -85,6 +87,7 @@ def writeHTML(energy, power, time, dTime, ticks):
     f.write('              , \"time\": \"'     + time   + '\"')
     f.write('              , \"dtime\": \"'    + dTime  + '\"')
     f.write('              , \"S0-ticks\": \"' + ticks  + '\"')
+    f.write('              , \"version\": \"'  + ver    + '\"')
     f.write('               },')
     f.write('    \"units\": {')
     f.write('                \"energy\": \"Wh\"')
@@ -92,6 +95,7 @@ def writeHTML(energy, power, time, dTime, ticks):
     f.write('              , \"time\": \"dd.mm.yyyy hh:mm:ss\"')
     f.write('              , \"dtime\": \"s\"')
     f.write('              , \"S0-ticks\": \"\"')
+    f.write('              , \"version\": \"\"')
     f.write('               }')
     f.write('}')
     f.close()
@@ -168,6 +172,7 @@ def saveConfig():
 ### MAIN
 ### ===============================================
 
+version     = 1.2
 counter     = 0
 lastTrigger = time.time()
 configFile  = "/etc/s0logger"
