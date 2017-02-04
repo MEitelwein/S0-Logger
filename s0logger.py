@@ -249,6 +249,9 @@ GPIO.add_event_detect(s0Pin, GPIO.RISING, S0Trigger)
 # Install signal handler for SIGTERM
 signal.signal(signal.SIGTERM, signal_term_handler)
 
+# Switch status LED off
+statusLED(0)
+
 # endless loop while GPIO is waiting for triggers
 try:
     while True:
