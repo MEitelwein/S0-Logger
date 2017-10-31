@@ -5,8 +5,8 @@ Author: Michael Eitelwein (michael@eitelwein.net)
 Description
 ===========
 Many digital power meters have a S0 interface to export energy consumption.
-Typically they create a trigger signal every x Wh consumed power. My
-meter is sending a 30ms trigger every 1 Wh consumed.
+Typically they create a trigger signal every x Wh consumed energy. My
+meter is sending a 30ms trigger every 1 Wh.
 
 This signal can be read with the GPIO pins of common microcontroller boards 
 like RaspberryPi, Arduino or others. As this solution is based on the 
@@ -69,24 +69,15 @@ Installation and Configuration
 When the standard Debian is running on the CHIP, log in as your favorite user
 equipped with sudo rights.
 
-1.) Install Adafruit GPIO Library for CHIP. Many thanks to Robert Wolterman
-    for porting the library to CHIP
+1.) Install CHIP_IO library for CHIP. Many thanks to Robert Wolterman
+    for creating this library
 
       $ sudo apt-get update
       $ sudo apt-get install python git apache2
       $ sudo apt-get install build-essential python-dev python-pip 
-      $ sudo apt-get install python-smbus flex bison
-      $ git clone https://github.com/atenart/dtc
-      $ cd dtc
-      $ make
-      $ sudo make install PREFIX=/usr
-      $ cd ..
+      $ sudo apt-get install python-smbus flex bison chip-dt-overlays
       $ git clone https://github.com/xtacocorex/CHIP_IO.git
       $ cd CHIP_IO
-      $ sudo python setup.py install
-      $ cd ..
-      $ git clone https://github.com/xtacocorex/Adafruit_Python_GPIO.git
-      $ cd Adafruit_Python_GPIO
       $ sudo python setup.py install
       $ cd ..
 
