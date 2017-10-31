@@ -27,8 +27,6 @@
 #   ticksperkwh = <number of ticks> See manual of S0 signal source
 #   s0blink     = True | False      Blink status LED with S0 signal
 
-
-import CHIP_IO.GPIO as GPIO
 import time
 import os
 import datetime
@@ -36,15 +34,19 @@ import signal
 import sys
 import syslog
 import ConfigParser
+import CHIP_IO.GPIO as GPIO
 
 
 ### Reset GPIO when exiting
 ### ------------------------------------------------
 def cleanup():
-    logMsg("Cleaning up S0-Logger")
+    logMsg("Cleaning up S0-Logger on " + s0Pin)
+
     GPIO.remove_event_detect(s0Pin)
-    GPIO.cleanup()    
+    GPIO.cleanup(s0Pin)
+    
     if os.path.isfile(pidFile):
+        logMsg("Removing PID file " + pidFile)
         os.remove(pidFile)
     saveConfig()
 
@@ -172,7 +174,7 @@ def saveConfig():
 ### MAIN
 ### ===============================================
 
-version     = 1.2
+version     = 1.3
 counter     = 0
 lastTrigger = time.time()
 configFile  = "/etc/s0logger"
@@ -236,21 +238,24 @@ pf.truncate()
 pf.write(str(os.getpid()))
 pf.close()
 
+# Switch status LED off
+statusLED(0)
+
 # Open syslog
 syslog.openlog(ident="S0-Logger",logoption=syslog.LOG_PID, facility=syslog.LOG_LOCAL0)
 
 # Create htmlFile already on startup
 writeHTML(str(energy), '0', strDateTime(), '0', str(counter))
 
+# Config GPIO pin for pull down and detection of rising edge
 logMsg("Setting up S0-Logger on " + s0Pin)
+GPIO.cleanup(s0Pin)
 GPIO.setup(s0Pin, GPIO.IN, GPIO.PUD_DOWN)
-GPIO.add_event_detect(s0Pin, GPIO.RISING, S0Trigger)
+GPIO.add_event_detect(s0Pin, GPIO.RISING)
+GPIO.add_event_callback(s0Pin, S0Trigger)
 
 # Install signal handler for SIGTERM
 signal.signal(signal.SIGTERM, signal_term_handler)
-
-# Switch status LED off
-statusLED(0)
 
 # endless loop while GPIO is waiting for triggers
 try:
@@ -258,7 +263,7 @@ try:
         # WAIT FOR EDGE
         if DEBUG:
             logMsg('Waiting... (' + str(counter) + ' ticks logged)')
-        time.sleep(1)
+        time.sleep(10)
 except:
     pass
     
