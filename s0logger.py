@@ -260,13 +260,15 @@ signal.signal(signal.SIGTERM, signal_term_handler)
 # endless loop while GPIO is waiting for triggers
 try:
     while True:
-        # WAIT FOR EDGE
+        # Dummy loop doing nothing but printing DEBUG messages
+        # while S0Trigger will be called by raising edges of s0Pin
         if DEBUG:
             logMsg('Waiting... (' + str(counter) + ' ticks logged)')
         time.sleep(10)
 except:
     pass
     
+# Dummy loop was interrupted
 # Clean up and terminate
 cleanup()
 logMsg('S0-Logger exited')
