@@ -137,9 +137,9 @@ def S0Trigger(channel):
         logMsg("Trigger at " + tStr + " after " + str(dTime) + " seconds, at " + str(energy/1000) + "kWh, consuming " + str(power) + "W")
     writeHTML(str(energy), str(power), tStr, str(dTime), str(counter))
     lastTrigger = triggerTime
-    # write cache info to config file every 10 Wh
+    # write cache info to config file every 1 kWh
     # to still have energy reading in case of power loss
-    if (energy % 10) == 0:
+    if (energy % 1000) == 0:
         saveConfig()
     statusLED(0)
 
