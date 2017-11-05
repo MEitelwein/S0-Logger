@@ -13,7 +13,7 @@ like RaspberryPi, Arduino or others. As this solution is based on the
 Adafruit GPIO library, it is easy to port to many different 
 microcontroller boards.
 
-I am using one of the nice CHIP boards of Next Thing Corp 
+I am using one of the nice C.H.I.P. boards of Next Thing Corp 
 (https://www.nextthing.co/), which provides full Debian linux, GPIO and WLAN
 for about $9 USD (!). It is easy to setup and use and very 
 compatible to RaspberryPI stuff.
@@ -73,7 +73,7 @@ equipped with sudo rights.
     for creating this library
 
       $ sudo apt-get update
-      $ sudo apt-get install python git apache2
+      $ sudo apt-get install python git python-bottle
       $ sudo apt-get install build-essential python-dev python-pip 
       $ sudo apt-get install python-smbus flex bison chip-dt-overlays
       $ git clone https://github.com/xtacocorex/CHIP_IO.git
@@ -82,20 +82,7 @@ equipped with sudo rights.
       $ cd ..
 
 
-2.) I prefer mounting tmpfs filesystems to not overburden the flash 
-    memory with transient data.
-
-      $ sudo mkdir -p /var/www/html/s0
-      $ sudo vim /etc/fstab
-
-            # UNCONFIGURED FSTAB FOR BASE SYSTEM
-            none   /var/www/html/s0   tmpfs  defaults  0  1
-            none   /var/log/apache2   tmpfs  defaults  0  1
-
-      $ sudo mount -a
-
-
-3.) Install the s0logger scripts 
+2.) Install the s0logger scripts 
 
       $ git clone https://github.com/MEitelwein/S0-Logger
       $ sudo cp S0-Logger/s0logger /etc/init.d
@@ -103,14 +90,14 @@ equipped with sudo rights.
       $ sudo cp S0-Logger/s0logger.py /root/scripts
 
 
-4.) Connect your powermeter as explained above
+3.) Connect your powermeter as explained above
 
 
-5.) Start the script with 
+4.) Start the script with 
 
       $ sudo /etc/init.d/s0logger start
 
-    and check the outoput at http://<CHIP-HOSTNAME>/s0/electricity.html.
+    and check the outoput at http://<CHIP-HOSTNAME>:8080/s0/electricity.html.
     It should produce a JSON output like the following (all in one line)
     
            { "data": { 
@@ -134,7 +121,7 @@ equipped with sudo rights.
       $ sudo /etc/init.d/s0logger stop
 
 
-6.) The script uses the config file /etc/s0logger which it creates 
+5.) The script uses the config file /etc/s0logger which it creates 
     automatically. The parameters are self-explaining, it will also be 
     used to cache the total energy when the script is not running.
     Here is the default config, only change values in [Config]
@@ -142,9 +129,12 @@ equipped with sudo rights.
            [Config]
            pidfile = /var/run/s0logger.pid
            htmlfile = /var/www/html/s0/electricity.html
-           debug = False
+           simulate = false
+           debug = false
            s0pin = XIO-P1
            ticksperkwh = 1000
+           port = 8080
+           ip = 0.0.0.0
 
            [Cache]
            energy = 0
@@ -157,17 +147,17 @@ equipped with sudo rights.
       $ sudo /etc/init.d/s0logger restart
 
 
-7.) If everything works as expected, configure the CHIP to start
+6.) If everything works as expected, configure the CHIP to start
     s0logger at boot time
 
       $ sudo update-rc.d s0logger defaults
 
 
-8.) Define a new HTTPMOD device in FHEM and enjoy the result!
+7.) Define a new HTTPMOD device in FHEM and enjoy the result!
     You need to replace <HOSTNAME> with the microcontroller's hostname.
     Polling interval is set to 30s here, any value > 0 is ok.
     
-          define powermeter HTTPMOD http://<HOSTNAME>/s0/electricity.html 30
+          define powermeter HTTPMOD http://<HOSTNAME>:8080/s0/electricity.html 30
           attr   powermeter getHeader1 Content-Type: application/json
           attr   powermeter getHeader2 Accept: */*
           attr   powermeter icon measure_power_meter
