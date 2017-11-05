@@ -34,7 +34,7 @@ import signal
 import sys
 import syslog
 import ConfigParser
-import CHIP_IO.GPIO as GPIO
+#import CHIP_IO.GPIO as GPIO
 
 
 ### Reset GPIO when exiting
@@ -42,8 +42,9 @@ import CHIP_IO.GPIO as GPIO
 def cleanup():
     logMsg("Cleaning up S0-Logger on " + s0Pin)
 
-    GPIO.remove_event_detect(s0Pin)
-    GPIO.cleanup(s0Pin)
+    if not SIMULATE:
+        GPIO.remove_event_detect(s0Pin)
+        GPIO.cleanup(s0Pin)
     
     if os.path.isfile(pidFile):
         logMsg("Removing PID file " + pidFile)
@@ -54,6 +55,8 @@ def cleanup():
 ### Log msg to syslog or console
 ### ------------------------------------------------
 def logMsg (msg):
+    if SIMULATE:
+        msg = 'Simulating: ' + msg
     if DEBUG:
         print msg
     else:
@@ -110,10 +113,12 @@ def statusLED(mode):
     if s0Blink:
         if ( mode == 1 ):
             # Switch C.H.I.P. status LED on
-            os.system("/usr/sbin/i2cset -f -y 0 0x34 0x93 0x1")
+            if not SIMULATE:
+                os.system("/usr/sbin/i2cset -f -y 0 0x34 0x93 0x1")
         else:
             # Switch C.H.I.P. status LED off
-            os.system("/usr/sbin/i2cset -f -y 0 0x34 0x93 0x0")
+            if not SIMULATE:
+                os.system("/usr/sbin/i2cset -f -y 0 0x34 0x93 0x0")
 
 
 ### Function being called by GPIO edge detection
@@ -174,10 +179,12 @@ def saveConfig():
 ### MAIN
 ### ===============================================
 
-version     = 1.3
+version     = 1.4
 counter     = 0
 lastTrigger = time.time()
-configFile  = "/etc/s0logger"
+configFile  = "s0logger.conf"
+DEBUG       = False
+SIMULATE    = True
 
 # Check for configs
 config = ConfigParser.ConfigParser()
@@ -186,15 +193,18 @@ if not os.path.isfile(configFile):
 
 config.read(configFile)
 if not config.has_section('Config'):
-    DEBUG = False
     logMsg('Config file misses section \'Config\' - will create new configuration')
     createConfig()
 
 if config.has_option('Config', 'DEBUG'):
     DEBUG    = config.get('Config', 'DEBUG').lower() == 'true'
 else:
-    DEBUG    = False
     config.set('Config', 'DEBUG', str(DEBUG))
+
+if config.has_option('Config', 'SIMULATE'):
+    SIMULATE = config.get('Config', 'SIMULATE').lower() == 'true'
+else:
+    config.set('Config', 'SIMULATE', str(DEBUG))
 
 if config.has_option('Config', 'pidFile'):
     pidFile  = config.get('Config', 'pidFile')
@@ -232,11 +242,14 @@ else:
     s0Blink  = True
     config.set('Config', 's0Blink', str(s0Blink))
 
-# Write pid into pidFile
-pf = open(pidFile, 'w')
-pf.truncate()
-pf.write(str(os.getpid()))
-pf.close()
+saveConfig()
+
+if not SIMULATE:
+    # Write pid into pidFile
+    pf = open(pidFile, 'w')
+    pf.truncate()
+    pf.write(str(os.getpid()))
+    pf.close()
 
 # Switch status LED off
 statusLED(0)
@@ -249,10 +262,11 @@ writeHTML(str(energy), '0', strDateTime(), '0', str(counter))
 
 # Config GPIO pin for pull down and detection of rising edge
 logMsg("Setting up S0-Logger on " + s0Pin)
-GPIO.cleanup(s0Pin)
-GPIO.setup(s0Pin, GPIO.IN, GPIO.PUD_DOWN)
-GPIO.add_event_detect(s0Pin, GPIO.RISING)
-GPIO.add_event_callback(s0Pin, S0Trigger)
+if not SIMULATE:
+    GPIO.cleanup(s0Pin)
+    GPIO.setup(s0Pin, GPIO.IN, GPIO.PUD_DOWN)
+    GPIO.add_event_detect(s0Pin, GPIO.RISING)
+    GPIO.add_event_callback(s0Pin, S0Trigger)
 
 # Install signal handler for SIGTERM
 signal.signal(signal.SIGTERM, signal_term_handler)
@@ -262,9 +276,14 @@ try:
     while True:
         # Dummy loop doing nothing but printing DEBUG messages
         # while S0Trigger will be called by raising edges of s0Pin
+        if SIMULATE:
+            S0Trigger(s0Pin)
+
         if DEBUG:
             logMsg('Waiting... (' + str(counter) + ' ticks logged)')
+
         time.sleep(10)
+
 except:
     pass
     
