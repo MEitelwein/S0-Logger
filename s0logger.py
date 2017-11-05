@@ -37,6 +37,7 @@ import sys
 import syslog
 import ConfigParser
 import json
+import thread
 from bottle import Bottle, run
 #import CHIP_IO.GPIO as GPIO
 
@@ -89,34 +90,8 @@ app = Bottle()
 def apiElectricity():
     return s0Log
 
-
-### Write data to html file
-### ------------------------------------------------
-def writeHTML(energy, power, time, dTime, ticks):
-    global version
-    #ver = str(version)
-    f = open(htmlFile, 'w')
-    f.truncate()
-    f.write(json.dumps(s0Log))
-#    f.write('{')
-#    f.write('    \"data\": {')
-#    f.write('                \"energy\": \"'   + energy + '\"')
-#    f.write('              , \"power\": \"'    + power  + '\"')
-#    f.write('              , \"time\": \"'     + time   + '\"')
-#    f.write('              , \"dtime\": \"'    + dTime  + '\"')
-#    f.write('              , \"S0-ticks\": \"' + ticks  + '\"')
-#    f.write('              , \"version\": \"'  + ver    + '\"')
-#    f.write('               },')
-#    f.write('    \"units\": {')
-#    f.write('                \"energy\": \"Wh\"')
-#    f.write('              , \"power\": \"W\"')
-#    f.write('              , \"time\": \"dd.mm.yyyy hh:mm:ss\"')
-#    f.write('              , \"dtime\": \"s\"')
-#    f.write('              , \"S0-ticks\": \"\"')
-#    f.write('              , \"version\": \"\"')
-#    f.write('               }')
-#    f.write('}')
-    f.close()
+def apiServer(ip, p, dbg):
+    run(app, host=ip, port=p, debug=dbg)
 
 
 ### Control C.H.I.P. status LED
@@ -138,26 +113,27 @@ def statusLED(mode):
 ### edge_handler is sending GPIO port as argument
 ### ------------------------------------------------
 def S0Trigger(channel):
-    statusLED(1)
-    global counter
-    global energy
     global lastTrigger
+    statusLED(1)
     triggerTime =  time.time()
-    tStr        =  strDateTime()
-    counter     += 1
+    s0Log['data']['time']     = strDateTime()
+    s0Log['data']['S0-ticks'] += 1
     # dEnergy in [Wh]
     # dTime in [s]
     dEnergy  = 1000 / ticksKWH;
-    dTime    = triggerTime - lastTrigger
-    energy  += dEnergy
-    power    = dEnergy * 3600 / dTime
+    s0Log['data']['dtime']    = triggerTime - lastTrigger
+    s0Log['data']['energy']  += dEnergy
+    s0Log['data']['power']    = dEnergy * 3600 / s0Log['data']['dtime']
     if DEBUG:
-        logMsg("Trigger at " + tStr + " after " + str(dTime) + " seconds, at " + str(energy/1000) + "kWh, consuming " + str(power) + "W")
-    writeHTML(str(energy), str(power), tStr, str(dTime), str(counter))
+        msg  = 'Trigger at ' + s0Log['data']['time']
+        msg += ' after '     + str(s0Log['data']['dtime'])       + ' seconds,'
+        msg += ' at '        + str(s0Log['data']['energy']/1000) + 'kWh, '
+        msg += ' consuming ' + str(s0Log['data']['power'])       + 'W'
+        logMsg(msg)
     lastTrigger = triggerTime
     # write cache info to config file every 1 kWh
     # to still have energy reading in case of power loss
-    if (energy % 1000) == 0:
+    if (s0Log['data']['energy'] % 1000) == 0:
         saveConfig()
     statusLED(0)
 
@@ -183,7 +159,7 @@ def saveConfig():
     if not config.has_section('Cache'):
         config.add_section('Cache')
 
-    config.set('Cache', 'energy', str(energy))
+    config.set('Cache', 'energy', s0Log['data']['energy'])
     with open(configFile, 'w') as configfile:
         config.write(configfile)
 
@@ -191,15 +167,9 @@ def saveConfig():
 ### ===============================================
 ### MAIN
 ### ===============================================
-
-counter     = 0
-lastTrigger = time.time()
-configFile  = "s0logger.conf"
-DEBUG       = False
-SIMULATE    = True
 s0Log       = {
     'data': {
-        'energy'  : 0,
+        'energy'  : 0.0,
         'power'   : 0,
         'time'    : 0,
         'dtime'   : 0,
@@ -215,6 +185,21 @@ s0Log       = {
         'version' : ''
         }
     }
+s0Log['data']['time'] = strDateTime()
+lastTrigger           = time.time()
+counter               = 0
+
+# default values for config
+DEBUG                 = False
+SIMULATE              = False
+configFile            = 's0logger.conf'
+#configFile            = '/etc/s0logger'
+pidFile               = '/var/run/s0logger.pid'
+ticksKWH              = 1000
+port                  = 8080
+ip                    = '0.0.0.0'
+s0Pin                 = 'XIO-P1'
+s0Blink               = True
 
 # Check for configs
 config = ConfigParser.ConfigParser()
@@ -234,42 +219,41 @@ else:
 if config.has_option('Config', 'SIMULATE'):
     SIMULATE = config.get('Config', 'SIMULATE').lower() == 'true'
 else:
-    config.set('Config', 'SIMULATE', str(DEBUG))
+    config.set('Config', 'SIMULATE', str(SIMULATE))
 
 if config.has_option('Config', 'pidFile'):
     pidFile  = config.get('Config', 'pidFile')
 else:
-    pidFile  = '/var/run/s0logger.pid'
     config.set('Config', 'pidFile', pidFile)
 
-if config.has_option('Config', 'htmlFile'):
-    htmlFile = config.get('Config', 'htmlFile')
+if config.has_option('Config', 'port'):
+    port = int(config.get('Config', 'port'))
 else:
-    htmlFile = '/var/www/html/s0/electricity.html'
-    config.set('Config', 'htmlFile', htmlFile)
+    config.set('Config', 'port', str(port))
+
+if config.has_option('Config', 'ip'):
+    ip = config.get('Config', 'ip')
+else:
+    config.set('Config', 'ip', ip)
 
 if config.has_option('Cache', 'energy'):
-    energy   = float(config.get('Cache', 'energy'))
+    s0Log['data']['energy'] = float(config.get('Cache', 'energy'))
 else:
-    energy   = float(0)
-    config.set('Cache', 'energy', str(energy))
+    config.set('Cache', 'energy', str(s0Log['data']['energy']))
 
 if config.has_option('Config', 'ticksPerkWh'):
     ticksKWH = int(config.get('Config', 'ticksPerkWh'))
 else:
-    ticksKWH = 1000
     config.set('Config', 'ticksPerkWh', str(ticksKWH))
 
 if config.has_option('Config', 'S0Pin'):
     s0Pin    = config.get('Config', 'S0Pin')
 else:
-    s0Pin    = 'XIO-P1'
     config.set('Config', 'S0Pin', s0Pin)
 
 if config.has_option('Config', 's0Blink'):
     s0Blink  = config.get('Config', 's0Blink').lower() == 'true'
 else:
-    s0Blink  = True
     config.set('Config', 's0Blink', str(s0Blink))
 
 saveConfig()
@@ -287,9 +271,6 @@ statusLED(0)
 # Open syslog
 syslog.openlog(ident="S0-Logger",logoption=syslog.LOG_PID, facility=syslog.LOG_LOCAL0)
 
-# Create htmlFile already on startup
-writeHTML(str(energy), '0', strDateTime(), '0', str(counter))
-
 # Config GPIO pin for pull down and detection of rising edge
 logMsg("Setting up S0-Logger on " + s0Pin)
 if not SIMULATE:
@@ -302,7 +283,7 @@ if not SIMULATE:
 signal.signal(signal.SIGTERM, signal_term_handler)
 
 # Start HTTP server for REST API
-run(app, host='0.0.0.0', port=8080)
+thread.start_new_thread(apiServer, (ip, port, DEBUG))
 
 # endless loop while GPIO is waiting for triggers
 try:
@@ -316,8 +297,7 @@ try:
             logMsg('Waiting... (' + str(counter) + ' ticks logged)')
 
         time.sleep(10)
-
-except:
+except KeyboardInterrupt:
     pass
     
 # Dummy loop was interrupted
