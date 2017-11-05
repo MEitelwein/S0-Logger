@@ -39,7 +39,7 @@ import ConfigParser
 import json
 import thread
 from bottle import Bottle, run
-#import CHIP_IO.GPIO as GPIO
+import CHIP_IO.GPIO as GPIO
 
 
 ### Reset GPIO when exiting
@@ -86,7 +86,7 @@ def strDateTime():
 ### Set up html server for REST API
 ### ------------------------------------------------
 app = Bottle()
-@app.route('/s0/electricity')
+@app.route('/s0/electricity', method='GET')
 def apiElectricity():
     return s0Log
 
@@ -155,11 +155,11 @@ def saveConfig():
     # re-read in case it had been manually edited
     config.read(configFile)
 
-    # overwrite counter
+    # save current energy reading
     if not config.has_section('Cache'):
         config.add_section('Cache')
-
     config.set('Cache', 'energy', s0Log['data']['energy'])
+
     with open(configFile, 'w') as configfile:
         config.write(configfile)
 
@@ -191,8 +191,7 @@ lastTrigger           = time.time()
 # default values for config
 DEBUG                 = False
 SIMULATE              = False
-configFile            = 's0logger.conf'
-#configFile            = '/etc/s0logger'
+configFile            = '/etc/s0logger'
 pidFile               = '/var/run/s0logger.pid'
 ticksKWH              = 1000
 port                  = 8080
