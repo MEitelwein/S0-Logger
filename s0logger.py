@@ -27,6 +27,8 @@
 #   ticksperkwh = <number of ticks> See manual of S0 signal source
 #   s0blink     = True | False      Blink status LED with S0 signal
 
+# -*- coding: UTF-8 -*-
+
 import time
 import os
 import datetime
@@ -34,6 +36,8 @@ import signal
 import sys
 import syslog
 import ConfigParser
+import json
+from bottle import Bottle, run
 #import CHIP_IO.GPIO as GPIO
 
 
@@ -78,31 +82,40 @@ def strDateTime():
     return now.strftime("%d.%m.%Y %H:%M:%S")
 
 
+### Set up html server for REST API
+### ------------------------------------------------
+app = Bottle()
+@app.route('/s0/electricity')
+def apiElectricity():
+    return s0Log
+
+
 ### Write data to html file
 ### ------------------------------------------------
 def writeHTML(energy, power, time, dTime, ticks):
     global version
-    ver = str(version)
+    #ver = str(version)
     f = open(htmlFile, 'w')
     f.truncate()
-    f.write('{')
-    f.write('    \"data\": {')
-    f.write('                \"energy\": \"'   + energy + '\"')
-    f.write('              , \"power\": \"'    + power  + '\"')
-    f.write('              , \"time\": \"'     + time   + '\"')
-    f.write('              , \"dtime\": \"'    + dTime  + '\"')
-    f.write('              , \"S0-ticks\": \"' + ticks  + '\"')
-    f.write('              , \"version\": \"'  + ver    + '\"')
-    f.write('               },')
-    f.write('    \"units\": {')
-    f.write('                \"energy\": \"Wh\"')
-    f.write('              , \"power\": \"W\"')
-    f.write('              , \"time\": \"dd.mm.yyyy hh:mm:ss\"')
-    f.write('              , \"dtime\": \"s\"')
-    f.write('              , \"S0-ticks\": \"\"')
-    f.write('              , \"version\": \"\"')
-    f.write('               }')
-    f.write('}')
+    f.write(json.dumps(s0Log))
+#    f.write('{')
+#    f.write('    \"data\": {')
+#    f.write('                \"energy\": \"'   + energy + '\"')
+#    f.write('              , \"power\": \"'    + power  + '\"')
+#    f.write('              , \"time\": \"'     + time   + '\"')
+#    f.write('              , \"dtime\": \"'    + dTime  + '\"')
+#    f.write('              , \"S0-ticks\": \"' + ticks  + '\"')
+#    f.write('              , \"version\": \"'  + ver    + '\"')
+#    f.write('               },')
+#    f.write('    \"units\": {')
+#    f.write('                \"energy\": \"Wh\"')
+#    f.write('              , \"power\": \"W\"')
+#    f.write('              , \"time\": \"dd.mm.yyyy hh:mm:ss\"')
+#    f.write('              , \"dtime\": \"s\"')
+#    f.write('              , \"S0-ticks\": \"\"')
+#    f.write('              , \"version\": \"\"')
+#    f.write('               }')
+#    f.write('}')
     f.close()
 
 
@@ -179,12 +192,29 @@ def saveConfig():
 ### MAIN
 ### ===============================================
 
-version     = 1.4
 counter     = 0
 lastTrigger = time.time()
 configFile  = "s0logger.conf"
 DEBUG       = False
 SIMULATE    = True
+s0Log       = {
+    'data': {
+        'energy'  : 0,
+        'power'   : 0,
+        'time'    : 0,
+        'dtime'   : 0,
+        'S0-ticks': 0,
+        'version' : 1.4
+        },
+    'units': {
+        'energy'  : 'Wh',
+        'power'   : 'W',
+        'time'    : 'dd.mm.yyyy hh:mm:ss',
+        'dtime'   : 's',
+        'S0-ticks': '',
+        'version' : ''
+        }
+    }
 
 # Check for configs
 config = ConfigParser.ConfigParser()
@@ -270,6 +300,9 @@ if not SIMULATE:
 
 # Install signal handler for SIGTERM
 signal.signal(signal.SIGTERM, signal_term_handler)
+
+# Start HTTP server for REST API
+run(app, host='0.0.0.0', port=8080)
 
 # endless loop while GPIO is waiting for triggers
 try:
