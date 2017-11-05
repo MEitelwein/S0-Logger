@@ -9,7 +9,7 @@
 # The S0 tick is detected at the GPIO pin of the CHIP device
 # as a rising edge on s0Pin
 # The GPIO library triggers S0Triger() based on raising edge 
-# and writes current values into htmlFile as a JSON structure
+# and exports values via REST API as a JSON structure
 #
 # energy is counted in [Wh]
 # power is calculated in [W]
@@ -21,11 +21,14 @@
 # 
 # Configs in file /etc/s0logger (will be generated if not existing)
 #   debug       = True | False      Print DEBUG output
+#   simulate    = True | False      Do not use GPIO HW but simulate S0 signals
 #   pidfile     = <path/pidfile>    Where to store pid
 #   htmlfile    = <path/file>       HTML file to be generated
 #   s0pin       = <GPIO_PIN>        Which PIN to poll for s0
 #   ticksperkwh = <number of ticks> See manual of S0 signal source
 #   s0blink     = True | False      Blink status LED with S0 signal
+#   port        = <port-numer>      Port used by built-in http-server
+#   ip          = <ip address>      IP to listen to, 0.0.0.0 means all interfaces
 
 # -*- coding: UTF-8 -*-
 
