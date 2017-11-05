@@ -187,7 +187,6 @@ s0Log       = {
     }
 s0Log['data']['time'] = strDateTime()
 lastTrigger           = time.time()
-counter               = 0
 
 # default values for config
 DEBUG                 = False
@@ -294,7 +293,7 @@ try:
             S0Trigger(s0Pin)
 
         if DEBUG:
-            logMsg('Waiting... (' + str(counter) + ' ticks logged)')
+            logMsg('Waiting... (' + str(s0Log['data']['S0-ticks']) + ' ticks logged)')
 
         time.sleep(10)
 except KeyboardInterrupt:
