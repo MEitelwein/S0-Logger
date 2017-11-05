@@ -74,7 +74,7 @@ def logMsg (msg):
 ### Catch os signals to exit cleanly
 ### ------------------------------------------------
 def signal_term_handler(signal, frame):
-    LogMsg("S0-Logger got SIGTERM")
+    logMsg("S0-Logger got SIGTERM")
     cleanup()
     sys.exit(0)
 
@@ -94,7 +94,10 @@ def apiElectricity():
     return s0Log
 
 def apiServer(ip, p, dbg):
-    run(app, host=ip, port=p, debug=dbg)
+    if DEBUG:
+        run(app, host=ip, port=p, debug=dbg, quiet=dbg)
+    else:
+        run(app, host=ip, port=p, debug=dbg, quiet=dbg)
 
 
 ### Control C.H.I.P. status LED
