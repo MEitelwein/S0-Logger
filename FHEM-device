@@ -3,7 +3,7 @@ Replace <HOSTNAME> with the hostname of your logger and
 check the correct path matching you htmlFile in the configs /etc/s0logger
 
 -------------- FHEM defines --------------------
-define powermeter HTTPMOD http://<HOSTNAME>/s0/electricity.html 30
+define powermeter HTTPMOD http://<HOSTNAME>:<PORT>/s0/electricity.html 30
 attr powermeter getHeader1 Content-Type: application/json
 attr powermeter getHeader2 Accept: */*
 attr powermeter icon measure_power_meter

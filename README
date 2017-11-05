@@ -157,7 +157,7 @@ equipped with sudo rights.
     You need to replace <HOSTNAME> with the microcontroller's hostname.
     Polling interval is set to 30s here, any value > 0 is ok.
     
-          define powermeter HTTPMOD http://<HOSTNAME>:8080/s0/electricity.html 30
+          define powermeter HTTPMOD http://<HOSTNAME>:<PORT>/s0/electricity.html 30
           attr   powermeter getHeader1 Content-Type: application/json
           attr   powermeter getHeader2 Accept: */*
           attr   powermeter icon measure_power_meter
