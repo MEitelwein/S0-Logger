@@ -41,8 +41,10 @@ import syslog
 import ConfigParser
 import json
 import thread
-from bottle import Bottle, run
-import CHIP_IO.GPIO as GPIO
+import atexit
+import bottle
+from bottle import route
+#import CHIP_IO.GPIO as GPIO
 
 
 ### Reset GPIO when exiting
@@ -54,9 +56,6 @@ def cleanup():
         GPIO.remove_event_detect(s0Pin)
         GPIO.cleanup(s0Pin)
     
-    if os.path.isfile(pidFile):
-        logMsg("Removing PID file " + pidFile)
-        os.remove(pidFile)
     saveConfig()
 
 
@@ -65,18 +64,11 @@ def cleanup():
 def logMsg (msg):
     if SIMULATE:
         msg = 'Simulating: ' + msg
+
     if DEBUG:
         print msg
     else:
         syslog.syslog(syslog.LOG_INFO, msg)
-
-
-### Catch os signals to exit cleanly
-### ------------------------------------------------
-def signal_term_handler(signal, frame):
-    logMsg("S0-Logger got SIGTERM")
-    cleanup()
-    sys.exit(0)
 
  
 ### Return string with date and time
@@ -88,16 +80,20 @@ def strDateTime():
 
 ### Set up html server for REST API
 ### ------------------------------------------------
-app = Bottle()
-@app.route('/s0/electricity', method='GET')
+@route('/electricity', method='GET')
 def apiElectricity():
     return s0Log
 
-def apiServer(ip, p, dbg):
-    if DEBUG:
-        run(app, host=ip, port=p, debug=dbg, quiet=dbg)
+@route('/trigger', method='GET')
+def trigger():
+    if SIMULATE:
+        S0Trigger(s0Pin)
+        return 'Triggered!'
     else:
-        run(app, host=ip, port=p, debug=dbg, quiet=dbg)
+        return 'Not in simulation mode!'
+
+def apiServer(ip, p, dbg):
+    run(app, host=ip, port=p, debug=dbg, quiet=dbg)
 
 
 ### Control C.H.I.P. status LED
@@ -173,7 +169,9 @@ def saveConfig():
 ### ===============================================
 ### MAIN
 ### ===============================================
-s0Log       = {
+os.chdir(os.path.dirname(__file__))
+
+s0Log = {
     'data': {
         'energy'  : 0.0,
         'power'   : 0,
@@ -196,8 +194,11 @@ lastTrigger           = time.time()
 
 # default values for config
 DEBUG                 = False
-SIMULATE              = False
-configFile            = '/etc/s0logger'
+SIMULATE              = True
+if SIMULATE:
+    configFile            = 'config/s0logger.conf'
+else:
+    configFile            = '/etc/s0logger'
 pidFile               = '/var/run/s0logger.pid'
 ticksKWH              = 1000
 port                  = 8080
@@ -262,13 +263,6 @@ else:
 
 saveConfig()
 
-if not SIMULATE:
-    # Write pid into pidFile
-    pf = open(pidFile, 'w')
-    pf.truncate()
-    pf.write(str(os.getpid()))
-    pf.close()
-
 # Switch status LED off
 statusLED(0)
 
@@ -283,28 +277,12 @@ if not SIMULATE:
     GPIO.add_event_detect(s0Pin, GPIO.RISING)
     GPIO.add_event_callback(s0Pin, S0Trigger)
 
-# Install signal handler for SIGTERM
-signal.signal(signal.SIGTERM, signal_term_handler)
+atexit.register(cleanup)
+
 
 # Start HTTP server for REST API
-thread.start_new_thread(apiServer, (ip, port, DEBUG))
-
-# endless loop while GPIO is waiting for triggers
-try:
-    while True:
-        # Dummy loop doing nothing but printing DEBUG messages
-        # while S0Trigger will be called by raising edges of s0Pin
-        if SIMULATE:
-            S0Trigger(s0Pin)
-
-        if DEBUG:
-            logMsg('Waiting... (' + str(s0Log['data']['S0-ticks']) + ' ticks logged)')
-
-        time.sleep(10)
-except KeyboardInterrupt:
-    pass
-    
-# Dummy loop was interrupted
-# Clean up and terminate
-cleanup()
-logMsg('S0-Logger exited')
+# start only if not called by apache-wsgi
+if __name__ == '__main__':
+    thread.start_new_thread(apiServer, (ip, port, DEBUG))
+else:
+    application = bottle.default_app()
