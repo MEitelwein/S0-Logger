@@ -18,12 +18,15 @@ I am using one of the nice C.H.I.P. boards of Next Thing Corp
 for about $9 USD (!). It is easy to setup and use and very 
 compatible to RaspberryPI stuff.
 
+The python app on the C.H.I.P is running as a wsgi application under apache2
+to provide the s0 data via a simple REST API using the bottle framwork.
+
 My SmartHome is managed by the open source solution FHEM, which is perfectly
 configurable and programmable - you need to love PERL though :-)
-FHEM can simply add a new device by parsing the HTML output of a web-capable 
-sensor. JSON data can be interpreted directly, which makes it very easy to 
-deal with complex data transfers. More info about FHEM can be found at 
-http://fhem.de
+FHEM can simply add a new device by parsing the HTML output of a REST API 
+capable sensor. JSON data can be interpreted directly, which makes it very 
+easy to deal with complex data transfers. More info about FHEM can be found
+at http://fhem.de
 
 
 Wiring
@@ -73,7 +76,8 @@ equipped with sudo rights.
     for creating this library
 
       $ sudo apt-get update
-      $ sudo apt-get install python git python-bottle
+      $ sudo apt-get install python git python-bottle apache2 
+      $ sudo apt-get install libapache2-mod-wsgi apache2-dev
       $ sudo apt-get install build-essential python-dev python-pip 
       $ sudo apt-get install python-smbus flex bison chip-dt-overlays
       $ git clone https://github.com/xtacocorex/CHIP_IO.git
@@ -85,43 +89,50 @@ equipped with sudo rights.
 2.) Install the s0logger scripts 
 
       $ git clone https://github.com/MEitelwein/S0-Logger
-      $ sudo cp S0-Logger/s0logger /etc/init.d
-      $ sudo mkdir -p /root/scripts
-      $ sudo cp S0-Logger/s0logger.py /root/scripts
+      $ sudo mkdir /var/www/s0logger /var/www/s0logger/config
+      $ sudo chgrp www-data /var/www/s0logger/config
+      $ sudo g=rwx /var/www/s0logger/config
+      $ sudo ln -s s0logger.wsgi /var/www/s0logger
+      $ sudo ln -s apache2-conf-s0logger.conf /etc/apache/conf-enabled/s0logger.conf
+      $ sudo ln -s apache2-sites-s0logger.conf /etc/apache/sites-enabled/s0logger.conf
 
 
 3.) Connect your powermeter as explained above
 
 
-4.) Start the script with 
+4.) Start the logging with 
 
-      $ sudo /etc/init.d/s0logger start
+      $ sudo systemctl restart apache2 
 
-    and check the outoput at http://<CHIP-HOSTNAME>:8080/s0/electricity.html.
+    and check the outoput at http://<CHIP-HOSTNAME>/s0/electricity
     It should produce a JSON output like the following (all in one line)
     
-           { "data": { 
-                       "energy": "34605938.0" , 
-                       "power": "972.642790514" , 
-                       "time": "09.04.2016 10:58:13 CET" , 
-                       "dtime": "3.70125603676" 
-                     }, 
-             "units": { 
-                       "energy": "Wh" , 
-                       "power": "W" , 
-                       "dtime": "s" 
-                      }
-           }
+        { "units": {
+            "power": "W", 
+            "energy": "Wh", 
+            "version": "", 
+            "time": "dd.mm.yyyy hh:mm:ss", 
+            "S0-ticks": "", 
+            "dtime": "s"
+            }, 
+          "data": {
+            "power": 4597897.198538368, 
+            "energy": 22228.0, 
+            "version": 1.4, 
+            "time": "08.11.2017 22:48:26", 
+            "S0-ticks": 1, 
+            "dtime": 0.0007829666137695312
+            }
+        }
+
 
     If it does not work, set DEBUG to True and watch the output 
     (see next section 6).
 
-    The script can be stopped with
-
-      $ sudo /etc/init.d/s0logger stop
+    The script starts automatically when apache2 starts and stops with apache2 as well.
 
 
-5.) The script uses the config file /etc/s0logger which it creates 
+5.) The script uses the config file /var/www/s0logger/config/s0logger which it creates 
     automatically. The parameters are self-explaining, it will also be 
     used to cache the total energy when the script is not running.
     Here is the default config, only change values in [Config]
@@ -142,15 +153,10 @@ equipped with sudo rights.
     Typically, you need to check how many triggers your powermeter 
     creates per kWh of consumed energy. Mine all have 1000 triggers 
     per kWh, but also 2000 per kWh is common.
+
     Rereading the config requires issuing
 
-      $ sudo /etc/init.d/s0logger restart
-
-
-6.) If everything works as expected, configure the CHIP to start
-    s0logger at boot time
-
-      $ sudo update-rc.d s0logger defaults
+      $ sudo systemctl restart apache2
 
 
 7.) Define a new HTTPMOD device in FHEM and enjoy the result!

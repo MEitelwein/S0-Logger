@@ -35,7 +35,6 @@
 import time
 import os
 import datetime
-import signal
 import sys
 import syslog
 import ConfigParser
