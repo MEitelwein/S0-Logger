@@ -204,6 +204,7 @@ port                  = 8080
 ip                    = '0.0.0.0'
 s0Pin                 = 'XIO-P1'
 s0Blink               = True
+triggerActive         = False
 
 # Check for configs
 config = ConfigParser.ConfigParser()
@@ -269,15 +270,18 @@ statusLED(0)
 syslog.openlog(ident="S0-Logger",logoption=syslog.LOG_PID, facility=syslog.LOG_LOCAL0)
 
 # Config GPIO pin for pull down and detection of rising edge
-logMsg("Setting up S0-Logger on " + s0Pin)
-if not SIMULATE:
-    GPIO.cleanup(s0Pin)
-    GPIO.setup(s0Pin, GPIO.IN, GPIO.PUD_DOWN)
-    GPIO.add_event_detect(s0Pin, GPIO.RISING)
-    GPIO.add_event_callback(s0Pin, S0Trigger)
+if not triggerActive:
+    if not SIMULATE:
+        GPIO.cleanup(s0Pin)
+        GPIO.setup(s0Pin, GPIO.IN, GPIO.PUD_DOWN)
+        GPIO.add_event_detect(s0Pin, GPIO.RISING)
+        GPIO.add_event_callback(s0Pin, S0Trigger)
+    triggerActive = True
+    logMsg("Setting up S0-Logger on " + s0Pin)
+else:
+    logMsg("Trigger already active on " + s0Pin)
 
 atexit.register(cleanup)
-
 
 # Start HTTP server for REST API
 # start only if not called by apache-wsgi
