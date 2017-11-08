@@ -89,6 +89,7 @@ equipped with sudo rights.
 2.) Install the s0logger scripts 
 
       $ git clone https://github.com/MEitelwein/S0-Logger
+      $ cd S0-Logger
       $ sudo mkdir /var/www/s0logger /var/www/s0logger/config
       $ sudo chgrp www-data /var/www/s0logger/config
       $ sudo g=rwx /var/www/s0logger/config
@@ -149,6 +150,9 @@ equipped with sudo rights.
 
            [Cache]
            energy = 0
+
+    Parameters ip and port only impact the bottle debug server. For production,
+    change the apache2 settings.
 
     Typically, you need to check how many triggers your powermeter 
     creates per kWh of consumed energy. Mine all have 1000 triggers 
