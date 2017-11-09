@@ -32,8 +32,10 @@
 
 # -*- coding: UTF-8 -*-
 
-import time
 import os
+os.chdir(os.path.dirname(__file__))
+os.environ['PYTHON_EGG_CACHE'] = '/var/www/s0logger/config/.python-egg'
+import time
 import datetime
 import sys
 import syslog
@@ -43,7 +45,7 @@ import thread
 import atexit
 import bottle
 from bottle import route
-#import CHIP_IO.GPIO as GPIO
+import CHIP_IO.GPIO as GPIO
 
 
 ### Reset GPIO when exiting
@@ -168,8 +170,6 @@ def saveConfig():
 ### ===============================================
 ### MAIN
 ### ===============================================
-os.chdir(os.path.dirname(__file__))
-
 s0Log = {
     'data': {
         'energy'  : 0.0,
@@ -194,11 +194,7 @@ lastTrigger           = time.time()
 # default values for config
 DEBUG                 = False
 SIMULATE              = True
-if SIMULATE:
-    configFile            = 'config/s0logger.conf'
-else:
-    configFile            = '/etc/s0logger'
-pidFile               = '/var/run/s0logger.pid'
+configFile            = 'config/s0logger.conf'
 ticksKWH              = 1000
 port                  = 8080
 ip                    = '0.0.0.0'

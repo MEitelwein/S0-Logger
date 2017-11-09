@@ -92,7 +92,7 @@ equipped with sudo rights.
       $ cd S0-Logger
       $ sudo mkdir /var/www/s0logger /var/www/s0logger/config
       $ sudo chgrp www-data /var/www/s0logger/config
-      $ sudo g=rwx /var/www/s0logger/config
+      $ sudo chmod g=rwx /var/www/s0logger/config
       $ sudo ln -s s0logger.wsgi /var/www/s0logger
       $ sudo ln -s apache2-conf-s0logger.conf /etc/apache/conf-enabled/s0logger.conf
       $ sudo ln -s apache2-sites-s0logger.conf /etc/apache/sites-enabled/s0logger.conf
