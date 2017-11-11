@@ -33,8 +33,9 @@
 # -*- coding: UTF-8 -*-
 
 import os
-os.chdir(os.path.dirname(__file__))
-os.environ['PYTHON_EGG_CACHE'] = '/var/www/s0logger/config/.python-egg'
+if __name__ != '__main__':
+    os.chdir(os.path.dirname(__file__))
+    os.environ['PYTHON_EGG_CACHE'] = '/var/www/s0logger/config/.python-egg'
 import time
 import datetime
 import sys
@@ -44,7 +45,7 @@ import json
 import thread
 import atexit
 import bottle
-from bottle import route
+from bottle import route, run, template, request
 import CHIP_IO.GPIO as GPIO
 
 
@@ -79,12 +80,15 @@ def strDateTime():
     return now.strftime("%d.%m.%Y %H:%M:%S")
 
 
-### Set up html server for REST API
+### REST API /electricity to get S0 log
 ### ------------------------------------------------
 @route('/electricity', method='GET')
 def apiElectricity():
     return s0Log
 
+
+### REST API /trigger to trigger S0 in simulation
+### ------------------------------------------------
 @route('/trigger', method='GET')
 def trigger():
     if SIMULATE:
@@ -93,8 +97,38 @@ def trigger():
     else:
         return 'Not in simulation mode!'
 
+
+### REST API /version to get version info
+### ------------------------------------------------
+@route('/version', method='GET')
+def trigger():
+    msg = 'S0-Logger version ' + str(s0Log['data']['version'])
+    if DEBUG:
+        msg += '<p> Debug: ' + str(DEBUG)
+    if SIMULATE:
+        msg += '<p> Simulation: ' + str(SIMULATE)
+    return msg
+
+
+### REST API /setEnergy to adjust total energy
+### ------------------------------------------------
+@route('/setEnergy', method='GET')
+def setEnergy():
+    old = s0Log['data']['energy']
+
+    if request.GET.save:
+        new = request.GET.energy.strip()
+        new = new.replace(',', '.')
+        s0Log['data']['energy'] = float(new)
+        return 'Energy was updated from %s Wh to %s Wh</p>' % (old, s0Log['data']['energy'])
+    else:
+        return template('setEnergy.tpl', energy=old)
+
+
+### Start built-in server for dev/debug
+### ------------------------------------------------
 def apiServer(ip, p, dbg):
-    run(app, host=ip, port=p, debug=dbg, quiet=dbg)
+    run(host=ip, port=p, debug=dbg, quiet=dbg)
 
 
 ### Control C.H.I.P. status LED
@@ -222,11 +256,6 @@ if config.has_option('Config', 'SIMULATE'):
 else:
     config.set('Config', 'SIMULATE', str(SIMULATE))
 
-if config.has_option('Config', 'pidFile'):
-    pidFile  = config.get('Config', 'pidFile')
-else:
-    config.set('Config', 'pidFile', pidFile)
-
 if config.has_option('Config', 'port'):
     port = int(config.get('Config', 'port'))
 else:
@@ -282,6 +311,6 @@ atexit.register(cleanup)
 # Start HTTP server for REST API
 # start only if not called by apache-wsgi
 if __name__ == '__main__':
-    thread.start_new_thread(apiServer, (ip, port, DEBUG))
+    apiServer(ip, port, DEBUG)
 else:
     application = bottle.default_app()
