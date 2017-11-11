@@ -95,7 +95,10 @@ equipped with sudo rights.
       $ sudo chmod g=rwx /var/www/s0logger/config
       $ sudo a2dismod mpm_event
       $ sudo a2enmod  mpm_worker wsgi
+      $ sudo a2dissite 000-default.conf
+      $ a=$(pwd); sudo ln -s ${a}/s0logger.py /var/www/s0logger
       $ a=$(pwd); sudo ln -s ${a}/s0logger.wsgi /var/www/s0logger
+      $ a=$(pwd); sudo ln -s ${a}/config.tpl /var/www/s0logger
       $ a=$(pwd); sudo ln -s ${a}/apache2-conf-s0logger.conf /etc/apache2/conf-enabled/s0logger.conf
       $ a=$(pwd); sudo ln -s ${a}/apache2-sites-s0logger.conf /etc/apache2/sites-enabled/s0logger.conf
 
@@ -105,7 +108,6 @@ equipped with sudo rights.
       $ sudo groupadd gpio
       $ sudo adduser www-data gpio
       $ sudo adduser www-data i2c
-
 
 
 4.) Connect your powermeter as explained above abd start the logging with 
