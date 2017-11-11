@@ -172,7 +172,9 @@ equipped with sudo rights.
     creates per kWh of consumed energy. Mine all have 1000 triggers 
     per kWh, but also 2000 per kWh is common.
 
-    Rereading the config after changes to file requires issuing
+    There is an API http://<CHIP-HOSTNAME>/s0/config to change the most
+    important config parameters at run-time.
+    Rereading the config after manual changes to the file requires issuing
 
       $ sudo systemctl restart apache2
 
