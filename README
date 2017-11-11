@@ -100,10 +100,15 @@ equipped with sudo rights.
       $ a=$(pwd); sudo ln -s ${a}/apache2-sites-s0logger.conf /etc/apache2/sites-enabled/s0logger.conf
 
 
-3.) Connect your powermeter as explained above
+3.) Give apache2 access to gpio
+
+      $ sudo groupadd gpio
+      $ sudo adduser www-data gpio
+      $ sudo adduser www-data i2c
 
 
-4.) Start the logging with 
+
+4.) Connect your powermeter as explained above abd start the logging with 
 
       $ sudo systemctl restart apache2 
 

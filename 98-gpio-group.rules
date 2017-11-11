@@ -1,0 +1,5 @@
+# udev enable group rw for gpio devices
+# change group:
+SUBSYSTEM=="gpio", PROGRAM="/bin/sh -c '/bin/chown -R root:gpio /sys/devices/platform/soc\@01c00000/1c2b400.i2c/i2c-2/2-0038/gpio'"
+# change permissions
+SUBSYSTEM=="gpio", PROGRAM="/bin/sh -c '/bin/chmod -R ug+rw /sys/devices/platform/soc\@01c00000/1c2b400.i2c/i2c-2/2-0038/gpio'"
