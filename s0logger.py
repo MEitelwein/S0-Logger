@@ -109,11 +109,7 @@ def trigger():
 ### ------------------------------------------------
 @app.route(urlPath+'/version', method='GET')
 def trigger():
-    msg = 'S0-Logger version ' + str(s0Log['data']['version'])
-    if DEBUG:
-        msg += '<p> Debug: ' + str(DEBUG)
-    if SIMULATE:
-        msg += '<p> Simulation: ' + str(SIMULATE)
+    msg = 'S0-Logger version: ' + str(s0Log['data']['version'])
     return msg
 
 
