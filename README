@@ -111,7 +111,7 @@ equipped with sudo rights.
       $ sudo adduser www-data i2c
 
 
-4.) Connect your powermeter as explained above abd start the logging with 
+4.) Connect powermeter as explained above and start the logging with 
 
       $ sudo systemctl restart apache2 
 
@@ -137,15 +137,19 @@ equipped with sudo rights.
         }
 
 
-    If it does not work, set DEBUG to True and watch the output 
-    (see next section 6).
+    If it does not work, use http://<CHIP-HOSTNAME>/s0/config to set DEBUG 
+    to True and watch the output in apache2's error log (see next section 6).
 
-    The script starts automatically when apache2 starts and stops with apache2 as well.
+    Apache2 will call the script request.wsgi at startup because s0logger.wsgi
+    will only be loaded when an http request is done to 
+    http://<CHIP-HOSTNAME>/s0 sub-url.
+    Calling s0logger.wsgi per WSGIImportScript would create 2 processes of
+    s0logger and mess up access to global variables.
 
 
-5.) The script uses the config file /var/www/s0logger/config/s0logger which it creates 
-    automatically. The parameters are self-explaining, it will also be 
-    used to cache the total energy when the script is not running.
+5.) The script uses the config file /var/www/s0logger/config/s0logger which 
+    it creates automatically. The parameters are self-explaining, it will also
+    be used to cache the total energy when the script is not running.
     Here is the default config, only change values in [Config]
 
            [Config]
@@ -168,7 +172,7 @@ equipped with sudo rights.
     creates per kWh of consumed energy. Mine all have 1000 triggers 
     per kWh, but also 2000 per kWh is common.
 
-    Rereading the config requires issuing
+    Rereading the config after changes to file requires issuing
 
       $ sudo systemctl restart apache2
 
