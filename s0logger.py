@@ -39,7 +39,6 @@ import sys
 import syslog
 import ConfigParser
 import json
-import thread
 import atexit
 from bottle import Bottle, route, run, template, request
 import CHIP_IO.GPIO as GPIO
