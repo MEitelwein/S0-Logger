@@ -93,9 +93,11 @@ equipped with sudo rights.
       $ sudo mkdir /var/www/s0logger /var/www/s0logger/config
       $ sudo chgrp www-data /var/www/s0logger/config
       $ sudo chmod g=rwx /var/www/s0logger/config
-      $ sudo ln -s s0logger.wsgi /var/www/s0logger
-      $ sudo ln -s apache2-conf-s0logger.conf /etc/apache/conf-enabled/s0logger.conf
-      $ sudo ln -s apache2-sites-s0logger.conf /etc/apache/sites-enabled/s0logger.conf
+      $ sudo a2dismod mpm_event
+      $ sudo a2enmod  mpm_worker wsgi
+      $ a=$(pwd); sudo ln -s ${a}/s0logger.wsgi /var/www/s0logger
+      $ a=$(pwd); sudo ln -s ${a}/apache2-conf-s0logger.conf /etc/apache2/conf-enabled/s0logger.conf
+      $ a=$(pwd); sudo ln -s ${a}/apache2-sites-s0logger.conf /etc/apache2/sites-enabled/s0logger.conf
 
 
 3.) Connect your powermeter as explained above
