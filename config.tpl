@@ -1,4 +1,4 @@
-<p>Change configuration of S0-Logger:</p>
+<h3>Change configuration of S0-Logger</h3>
 
 <form action="{{path}}/config" method="GET">
     <label for="energy">Energy [Wh]:
@@ -23,6 +23,16 @@
         <input type="radio" id="true" name="simulate" value="True" {{"checked" if simulate else ""}}>
         <label for="true"> enabled</label>
         <input type="radio" id="false" name="simulate" value="False" {{"" if simulate else "checked"}}>
+        <label for="false"> disabled</label>
+    </fieldset>
+    </p>
+
+    <p>
+    <fieldset>
+        <legend> S0-Blinking </legend>
+        <input type="radio" id="true" name="blink" value="True" {{"checked" if blink else ""}}>
+        <label for="true"> enabled</label>
+        <input type="radio" id="false" name="blink" value="False" {{"" if blink else "checked"}}>
         <label for="false"> disabled</label>
     </fieldset>
     </p>

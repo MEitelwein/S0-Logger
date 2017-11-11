@@ -124,22 +124,25 @@ def setConfig():
     old = s0Log['data']['energy']
     global DEBUG
     global SIMULATE
+    global s0Blink
 
     if request.GET.save:
         new = request.GET.energy.strip()
         new = new.replace(',', '.')
         s0Log['data']['energy'] = float(new)
-        DEBUG = request.GET.debug.strip().lower() == 'true'
+        DEBUG    = request.GET.debug.strip().lower()    == 'true'
         SIMULATE = request.GET.simulate.strip().lower() == 'true'
+        s0Blink  = request.GET.blink.strip().lower()  == 'true'
 
         msg  = 'Energy was updated from '
         msg += '%s Wh to %s Wh</p>' % (old, s0Log['data']['energy'])
-        msg += '<p> Debug: ' + str(DEBUG)
-        msg += '<p> Simulation: ' + str(SIMULATE)
+        msg += '<p>Debug: '      + str(DEBUG)
+        msg += '<p>Simulation: ' + str(SIMULATE)
+        msg += '<p>s0Blink: '    + str(s0Blink)
         saveConfig()
         return msg       
     else:
-        return template('config.tpl', energy=old, path=url, debug=DEBUG, simulate=SIMULATE)
+        return template('config.tpl', energy=old, path=url, debug=DEBUG, simulate=SIMULATE, blink=s0Blink)
 
 
 ### Start built-in server for dev/debug
@@ -217,6 +220,7 @@ def saveConfig():
 
     config.set('Config', 'DEBUG',    str(DEBUG))
     config.set('Config', 'SIMULATE', str(SIMULATE))
+    config.set('Config', 's0Blink',  str(s0Blink))
     config.set('Cache',  'energy',   s0Log['data']['energy'])
 
     with open(configFile, 'w') as configfile:
@@ -261,6 +265,9 @@ s0Pin                 = 'XIO-P1'
 s0Blink               = True
 triggerActive         = False
 
+# Open syslog
+syslog.openlog(ident="S0-Logger",logoption=syslog.LOG_PID, facility=syslog.LOG_LOCAL0)
+
 # Check for configs
 config = ConfigParser.ConfigParser()
 if not os.path.isfile(configFile):
@@ -276,6 +283,9 @@ if config.has_option('Config', 'DEBUG'):
 
 if config.has_option('Config', 'SIMULATE'):
     SIMULATE = config.get('Config', 'SIMULATE').lower() == 'true'
+
+if DEBUG:
+    logMsg('S0-Logger starting')
 
 if config.has_option('Config', 'port'):
     port = int(config.get('Config', 'port'))
@@ -302,16 +312,11 @@ else:
 
 if config.has_option('Config', 's0Blink'):
     s0Blink  = config.get('Config', 's0Blink').lower() == 'true'
-else:
-    config.set('Config', 's0Blink', str(s0Blink))
 
 saveConfig()
 
 # Switch status LED off
 statusLED(0)
-
-# Open syslog
-syslog.openlog(ident="S0-Logger",logoption=syslog.LOG_PID, facility=syslog.LOG_LOCAL0)
 
 # Config GPIO pin for pull down and detection of rising edge
 if not triggerActive:
