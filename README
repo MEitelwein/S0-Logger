@@ -98,6 +98,7 @@ equipped with sudo rights.
       $ sudo a2dissite 000-default.conf
       $ a=$(pwd); sudo ln -s ${a}/s0logger.py /var/www/s0logger
       $ a=$(pwd); sudo ln -s ${a}/s0logger.wsgi /var/www/s0logger
+      $ a=$(pwd); sudo ln -s ${a}/request.wsgi /var/www/s0logger
       $ a=$(pwd); sudo ln -s ${a}/config.tpl /var/www/s0logger
       $ a=$(pwd); sudo ln -s ${a}/apache2-conf-s0logger.conf /etc/apache2/conf-enabled/s0logger.conf
       $ a=$(pwd); sudo ln -s ${a}/apache2-sites-s0logger.conf /etc/apache2/sites-enabled/s0logger.conf

@@ -156,11 +156,11 @@ def statusLED(mode):
         if ( mode == 1 ):
             # Switch C.H.I.P. status LED on
             if not SIMULATE:
-                os.system("/usr/sbin/i2cset -f -y 0 0x34 0x93 0x1")
+                os.system('/usr/sbin/i2cset -f -y 0 0x34 0x93 0x1')
         else:
             # Switch C.H.I.P. status LED off
             if not SIMULATE:
-                os.system("/usr/sbin/i2cset -f -y 0 0x34 0x93 0x0")
+                os.system('/usr/sbin/i2cset -f -y 0 0x34 0x93 0x0')
 
 
 ### Function being called by GPIO edge detection
