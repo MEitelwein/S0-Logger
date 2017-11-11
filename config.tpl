@@ -1,7 +1,7 @@
 <p>Change configuration of S0-Logger:</p>
 
 <form action="{{path}}/config" method="GET">
-    <label for="energy">Energy:
+    <label for="energy">Energy [Wh]:
         <input type="text" size="10" name="energy" value="{{energy}}">
 
     </label>

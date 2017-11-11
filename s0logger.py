@@ -136,6 +136,7 @@ def setConfig():
         msg += '%s Wh to %s Wh</p>' % (old, s0Log['data']['energy'])
         msg += '<p> Debug: ' + str(DEBUG)
         msg += '<p> Simulation: ' + str(SIMULATE)
+        saveConfig()
         return msg       
     else:
         return template('config.tpl', energy=old, path=url, debug=DEBUG, simulate=SIMULATE)
@@ -208,13 +209,21 @@ def saveConfig():
     # re-read in case it had been manually edited
     config.read(configFile)
 
-    # save current energy reading
+    if not config.has_section('Config'):
+        config.add_section('Config')
+
     if not config.has_section('Cache'):
         config.add_section('Cache')
-    config.set('Cache', 'energy', s0Log['data']['energy'])
+
+    config.set('Config', 'DEBUG',    str(DEBUG))
+    config.set('Config', 'SIMULATE', str(SIMULATE))
+    config.set('Cache',  'energy',   s0Log['data']['energy'])
 
     with open(configFile, 'w') as configfile:
         config.write(configfile)
+
+    if DEBUG:
+        logMsg('Config saved')
 
 
 ### ===============================================
@@ -264,13 +273,9 @@ if not config.has_section('Config'):
 
 if config.has_option('Config', 'DEBUG'):
     DEBUG    = config.get('Config', 'DEBUG').lower() == 'true'
-else:
-    config.set('Config', 'DEBUG', str(DEBUG))
 
 if config.has_option('Config', 'SIMULATE'):
     SIMULATE = config.get('Config', 'SIMULATE').lower() == 'true'
-else:
-    config.set('Config', 'SIMULATE', str(SIMULATE))
 
 if config.has_option('Config', 'port'):
     port = int(config.get('Config', 'port'))
@@ -284,8 +289,6 @@ else:
 
 if config.has_option('Cache', 'energy'):
     s0Log['data']['energy'] = float(config.get('Cache', 'energy'))
-else:
-    config.set('Cache', 'energy', str(s0Log['data']['energy']))
 
 if config.has_option('Config', 'ticksPerkWh'):
     ticksKWH = int(config.get('Config', 'ticksPerkWh'))
