@@ -131,7 +131,11 @@ def setConfig():
 
         msg  = '<h3>Configuration was updated</h3>'
         msg += '<ul>'
-        msg += '<li>Energy from %s Wh to %s Wh</li>' % (old, s0Log['data']['energy'])
+        if old == s0Log['data']['energy']:
+            msg += '<li>Energy: unchanged</li>'
+        else:
+            msg += '<li>Energy changed from '
+            msg += '%s Wh to %s Wh</li>' % (old, s0Log['data']['energy'])
         msg += '<li>Debug: '      + str(DEBUG)    + '</li>'
         msg += '<li>Simulation: ' + str(SIMULATE) + '</li>'
         msg += '<li>s0Blink: '    + str(s0Blink)  + '</li>'
