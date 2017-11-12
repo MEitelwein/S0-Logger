@@ -108,7 +108,9 @@ def trigger():
 ### ------------------------------------------------
 @app.route(urlPath+'/version', method='GET')
 def trigger():
-    msg = 'S0-Logger version: ' + str(s0Log['data']['version'])
+    msg = {}
+    msg['application'] = 'S0-Logger'
+    msg['version']     = s0Log['data']['version']
     return msg
 
 
@@ -122,12 +124,13 @@ def setConfig():
     global s0Blink
 
     if request.GET.save:
+        # Will need to add checks here that API is used correctly
         new = request.GET.energy.strip()
         new = new.replace(',', '.')
         s0Log['data']['energy'] = float(new)
         DEBUG    = request.GET.debug.strip().lower()    == 'true'
         SIMULATE = request.GET.simulate.strip().lower() == 'true'
-        s0Blink  = request.GET.blink.strip().lower()  == 'true'
+        s0Blink  = request.GET.blink.strip().lower()    == 'true'
 
         msg  = '<h3>Configuration was updated</h3>'
         msg += '<ul>'
