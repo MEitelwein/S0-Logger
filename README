@@ -73,14 +73,15 @@ When the standard Debian is running on the CHIP, log in as your favorite user
 equipped with sudo rights.
 
 1.) Install CHIP_IO library for CHIP. Many thanks to Robert Wolterman
-    for creating this library
+    for creating this library. I am using a fork which allows GPIO
+    access as non-root user
 
       $ sudo apt-get update
       $ sudo apt-get install python git python-bottle apache2 
       $ sudo apt-get install libapache2-mod-wsgi apache2-dev curl
       $ sudo apt-get install build-essential python-dev python-pip 
       $ sudo apt-get install python-smbus flex bison chip-dt-overlays
-      $ git clone https://github.com/xtacocorex/CHIP_IO.git
+      $ git clone https://github.com/MEitelwein/CHIP_IO.git
       $ cd CHIP_IO
       $ sudo python setup.py install
       $ cd ..
@@ -109,7 +110,11 @@ equipped with sudo rights.
       $ sudo groupadd gpio
       $ sudo adduser www-data gpio
       $ sudo adduser www-data i2c
+      $ sudo cp 98-gpio-group.rules /etc/udev/rules.d/
 
+    Add the following 2 lines to /etc/rc.d
+      chgrp -R gpio /sys/class/gpio
+      chmod -R g+rw /sys/class/gpio
 
 4.) Connect powermeter as explained above and start the logging with 
 

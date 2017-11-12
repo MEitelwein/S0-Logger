@@ -129,11 +129,13 @@ def setConfig():
         SIMULATE = request.GET.simulate.strip().lower() == 'true'
         s0Blink  = request.GET.blink.strip().lower()  == 'true'
 
-        msg  = 'Energy was updated from '
-        msg += '%s Wh to %s Wh</p>' % (old, s0Log['data']['energy'])
-        msg += '<p>Debug: '      + str(DEBUG)
-        msg += '<p>Simulation: ' + str(SIMULATE)
-        msg += '<p>s0Blink: '    + str(s0Blink)
+        msg  = '<h3>Configuration was updated<h3>'
+        msg += '<ul>'
+        msg += '<li>Energy from %s Wh to %s Wh</li>' % (old, s0Log['data']['energy'])
+        msg += '<li>Debug: '      + str(DEBUG)    + '</li>
+        msg += '<li>Simulation: ' + str(SIMULATE) + '</li>
+        msg += '<li>s0Blink: '    + str(s0Blink)  + '</li>
+        msg += '</ul>
         saveConfig()
         return msg       
     else:
