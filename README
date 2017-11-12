@@ -73,15 +73,14 @@ When the standard Debian is running on the CHIP, log in as your favorite user
 equipped with sudo rights.
 
 1.) Install CHIP_IO library for CHIP. Many thanks to Robert Wolterman
-    for creating this library. I am using a fork which allows GPIO
-    access as non-root user
+    for creating this library.
 
       $ sudo apt-get update
       $ sudo apt-get install python git python-bottle apache2 
       $ sudo apt-get install libapache2-mod-wsgi apache2-dev curl
       $ sudo apt-get install build-essential python-dev python-pip 
       $ sudo apt-get install python-smbus flex bison chip-dt-overlays
-      $ git clone https://github.com/MEitelwein/CHIP_IO.git
+      $ git clone https://github.com/xtacocorex/CHIP_IO.git
       $ cd CHIP_IO
       $ sudo python setup.py install
       $ cd ..
@@ -105,22 +104,24 @@ equipped with sudo rights.
       $ a=$(pwd); sudo ln -s ${a}/apache2-sites-s0logger.conf /etc/apache2/sites-enabled/s0logger.conf
 
 
-3.) Give apache2 access to gpio
+3.) Give apache2 access to gpio (assuming uid is www-data)
 
       $ sudo groupadd gpio
       $ sudo adduser www-data gpio
       $ sudo adduser www-data i2c
       $ sudo cp 98-gpio-group.rules /etc/udev/rules.d/
 
-    Add the following 2 lines to /etc/rc.d
+    Add the following 2 lines to /etc/rc.local
       chgrp -R gpio /sys/class/gpio
       chmod -R g+rw /sys/class/gpio
 
-4.) Connect powermeter as explained above and start the logging with 
+
+4.) Connect powermeter's S0 port with the CHIP as explained above and 
+    start logging with starting Apache
 
       $ sudo systemctl restart apache2 
 
-    and check the outoput at http://<CHIP-HOSTNAME>/s0/electricity
+    Check the outoput at http://<CHIP-HOSTNAME>/s0/electricity.
     It should produce a JSON output like the following (all in one line)
     
         { "units": {
@@ -143,35 +144,35 @@ equipped with sudo rights.
 
 
     If it does not work, use http://<CHIP-HOSTNAME>/s0/config to set DEBUG 
-    to True and watch the output in apache2's error log (see next section 6).
+    to True and watch the output in apache2's error log (see section 6).
 
     Apache2 will call the script request.wsgi at startup because s0logger.wsgi
-    will only be loaded when an http request is done to 
-    http://<CHIP-HOSTNAME>/s0 sub-url.
+    will only be loaded when an http request is done to s0logger's sub-url 
+    http://<CHIP-HOSTNAME>/s0.
     Calling s0logger.wsgi per WSGIImportScript would create 2 processes of
-    s0logger and mess up access to global variables.
+    s0logger and mess up access to global variables. May need to find a nicer
+    way of securing thread-safeness at some time in the future.
 
 
-5.) The script uses the config file /var/www/s0logger/config/s0logger which 
+5.) The script uses the config file /var/www/s0logger/config/s0logger.conf which 
     it creates automatically. The parameters are self-explaining, it will also
     be used to cache the total energy when the script is not running.
-    Here is the default config, only change values in [Config]
+    Here is the default config, you should only change values in [Config]
 
            [Config]
-           pidfile = /var/run/s0logger.pid
-           htmlfile = /var/www/html/s0/electricity.html
-           simulate = false
-           debug = false
+           simulate = False
+           debug = False
            s0pin = XIO-P1
            ticksperkwh = 1000
            port = 8080
            ip = 0.0.0.0
+           s0blink = True
 
            [Cache]
            energy = 0
 
     Parameters ip and port only impact the bottle debug server. For production,
-    change the apache2 settings.
+    change the apache2 settings in the files apache2-*-s0logger.conf .
 
     Typically, you need to check how many triggers your powermeter 
     creates per kWh of consumed energy. Mine all have 1000 triggers 
