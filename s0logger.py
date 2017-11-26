@@ -61,10 +61,6 @@ settings = {
     'urlPath'        : '/s0'
     }
 
-# Load GPIO module if not simulating
-if not settings['SIMULATE']:
-    import CHIP_IO.GPIO as GPIO
-
 # Apache2 defines urlPath in its own config 
 if __name__ != '__main__':
     settings['urlPath'] = ''
