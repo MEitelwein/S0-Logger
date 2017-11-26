@@ -80,7 +80,7 @@ equipped with sudo rights.
       $ sudo apt-get install libapache2-mod-wsgi apache2-dev curl
       $ sudo apt-get install build-essential python-dev python-pip 
       $ sudo apt-get install python-smbus flex bison chip-dt-overlays
-      $ git clone https://github.com/xtacocorex/CHIP_IO.git
+      $ git clone https://github.com/xtacocorex/CHIP_IO
       $ cd CHIP_IO
       $ sudo python setup.py install
       $ cd ..
