@@ -88,7 +88,7 @@ equipped with sudo rights.
 
 2.) Install the s0logger scripts 
 
-      $ git clone https://github.com/MEitelwein/S0-Logger
+      $ git clone https://gitlab.eitelwein.net/MEitelwein/S0-Logger
       $ cd S0-Logger
       $ sudo mkdir /var/www/s0logger /var/www/s0logger/config
       $ sudo chgrp www-data /var/www/s0logger/config
