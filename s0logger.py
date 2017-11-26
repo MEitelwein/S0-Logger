@@ -46,22 +46,22 @@ import CHIP_IO.GPIO as GPIO
 ### Reset GPIO when exiting
 ### ------------------------------------------------
 def cleanup():
-    logMsg("Cleaning up S0-Logger on " + s0Pin)
+    logMsg("Cleaning up S0-Logger on " + settings['s0Pin'])
 
-    if not SIMULATE:
-        GPIO.remove_event_detect(s0Pin)
-        GPIO.cleanup(s0Pin)
+    if not settings['SIMULATE']:
+        GPIO.remove_event_detect(settings['s0Pin'])
+        GPIO.cleanup(settings['s0Pin'])
     
-    saveConfig()
+    saveConfig(settings['configFileName'])
 
 
 ### Log msg to syslog or console
 ### ------------------------------------------------
 def logMsg (msg):
-    if SIMULATE:
+    if settings['SIMULATE']:
         msg = 'Simulating: ' + msg
 
-    if DEBUG:
+    if settings['DEBUG']:
         print >> sys.stderr, msg
     else:
         syslog.syslog(syslog.LOG_INFO, msg)
@@ -81,24 +81,24 @@ url = '/s0'
 
 # In dev/debug mode add 's0' to URL
 if __name__ == '__main__':
-    urlPath = url
+    settings['urlPath'] = url
 else:
-    urlPath = ''
+    settings['urlPath'] = ''
 
 
 ### REST API /electricity to get S0 log
 ### ------------------------------------------------
-@app.route(urlPath+'/electricity', method='GET')
+@app.route(settings['urlPath']+'/electricity', method='GET')
 def apiElectricity():
     return s0Log
 
 
 ### REST API /trigger to trigger S0 when simulating
 ### ------------------------------------------------
-@app.route(urlPath+'/trigger', method='GET')
-def trigger():
-    if SIMULATE:
-        S0Trigger(s0Pin)
+@app.route(settings['urlPath']+'/trigger', method='GET')
+def apiTrigger():
+    if settings['SIMULATE']:
+        S0Trigger(settings['s0Pin'])
         return 'Triggered!'
     else:
         return 'Not in simulation mode!'
@@ -106,8 +106,8 @@ def trigger():
 
 ### REST API /version to get version info
 ### ------------------------------------------------
-@app.route(urlPath+'/version', method='GET')
-def trigger():
+@app.route(settings['urlPath']+'/version', method='GET')
+def apiVersion():
     msg = {}
     msg['application'] = 'S0-Logger'
     msg['version']     = s0Log['data']['version']
@@ -116,21 +116,18 @@ def trigger():
 
 ### REST API /config to adjust configuration
 ### ------------------------------------------------
-@app.route(urlPath+'/config', method='GET')
-def setConfig():
+@app.route(settings['urlPath']+'/config', method='GET')
+def apiSetConfig():
     old = s0Log['data']['energy']
-    global DEBUG
-    global SIMULATE
-    global s0Blink
 
     if request.GET.save:
         # Will need to add checks here that API is used correctly
         new = request.GET.energy.strip()
         new = new.replace(',', '.')
         s0Log['data']['energy'] = float(new)
-        DEBUG    = request.GET.debug.strip().lower()    == 'true'
-        SIMULATE = request.GET.simulate.strip().lower() == 'true'
-        s0Blink  = request.GET.blink.strip().lower()    == 'true'
+        settings['DEBUG']    = request.GET.debug.strip().lower()    == 'true'
+        settings['SIMULATE'] = request.GET.simulate.strip().lower() == 'true'
+        settings['s0Blink']  = request.GET.blink.strip().lower()    == 'true'
 
         msg  = '<h3>Configuration was updated</h3>'
         msg += '<ul>'
@@ -139,14 +136,14 @@ def setConfig():
         else:
             msg += '<li>Energy changed from '
             msg += '%s Wh to %s Wh</li>' % (old, s0Log['data']['energy'])
-        msg += '<li>Debug: '      + str(DEBUG)    + '</li>'
-        msg += '<li>Simulation: ' + str(SIMULATE) + '</li>'
-        msg += '<li>s0Blink: '    + str(s0Blink)  + '</li>'
+        msg += '<li>Debug: '      + str(settings['DEBUG'])    + '</li>'
+        msg += '<li>Simulation: ' + str(settings['SIMULATE']) + '</li>'
+        msg += '<li>s0Blink: '    + str(settings['s0Blink'])  + '</li>'
         msg += '</ul>'
-        saveConfig()
+        saveConfig(settings['configFileName'])
         return msg       
     else:
-        return template('config.tpl', energy=old, path=url, debug=DEBUG, simulate=SIMULATE, blink=s0Blink)
+        return template('config.tpl', energy=old, path=url, debug=settings['DEBUG'], simulate=settings['SIMULATE'], blink=settings['s0Blink'])
 
 
 ### Start built-in server for dev/debug
@@ -159,14 +156,14 @@ def apiServer(ip, p, dbg):
 ### mode=1 will switch on, 0 will switch off
 ### ------------------------------------------------
 def statusLED(mode):
-    if s0Blink:
+    if settings['s0Blink']:
         if ( mode == 1 ):
             # Switch C.H.I.P. status LED on
-            if not SIMULATE:
+            if not settings['SIMULATE']:
                 os.system('/usr/sbin/i2cset -f -y 0 0x34 0x93 0x1')
         else:
             # Switch C.H.I.P. status LED off
-            if not SIMULATE:
+            if not settings['SIMULATE']:
                 os.system('/usr/sbin/i2cset -f -y 0 0x34 0x93 0x0')
 
 
@@ -174,24 +171,23 @@ def statusLED(mode):
 ### edge_handler is sending GPIO port as argument
 ### ------------------------------------------------
 def S0Trigger(channel):
-    global lastTrigger
     statusLED(1)
-    triggerTime =  time.time()
-    s0Log['data']['time']     = strDateTime()
+    triggerTime = time.time()
+    s0Log['data']['time']      = strDateTime()
     s0Log['data']['S0-ticks'] += 1
     # dEnergy in [Wh]
     # dTime in [s]
-    dEnergy  = 1000 / ticksKWH;
-    s0Log['data']['dtime']    = triggerTime - lastTrigger
+    dEnergy  = 1000 / settings['ticksKWH'];
+    s0Log['data']['dtime']    = triggerTime - settings['lastTrigger']
     s0Log['data']['energy']  += dEnergy
     s0Log['data']['power']    = dEnergy * 3600 / s0Log['data']['dtime']
-    if DEBUG:
+    if settings['DEBUG']:
         msg  = 'Trigger at ' + s0Log['data']['time']
         msg += ' after '     + str(s0Log['data']['dtime'])       + ' seconds,'
-        msg += ' at '        + str(s0Log['data']['energy']/1000) + 'kWh, '
-        msg += ' consuming ' + str(s0Log['data']['power'])       + 'W'
+        msg += ' at '        + str(s0Log['data']['energy']/1000) + ' kWh, '
+        msg += ' consuming ' + str(s0Log['data']['power'])       + ' W'
         logMsg(msg)
-    lastTrigger = triggerTime
+    settings['lastTrigger'] = triggerTime
     # write cache info to config file every 1 kWh
     # to still have energy reading in case of power loss
     if (s0Log['data']['energy'] % 1000) == 0:
@@ -199,11 +195,11 @@ def S0Trigger(channel):
     statusLED(0)
 
 
-### Set GPIO up
+### Initialize GPIO system
 ### ------------------------------------------------
 def configGPIO(pin):
     if not settings['triggerActive']:
-        if not SIMULATE:
+        if not settings['SIMULATE']:
             # Config GPIO pin for pull down
             # and detection of rising edge
             GPIO.cleanup(pin)
@@ -242,31 +238,28 @@ def loadConfig(configFileName):
         createConfig(configFileName)
 
     if config.has_option('Config', 'DEBUG'):
-        DEBUG    = config.get('Config', 'DEBUG').lower() == 'true'
+        settings['DEBUG']    = config.get('Config', 'DEBUG').lower() == 'true'
 
     if config.has_option('Config', 'SIMULATE'):
-        SIMULATE = config.get('Config', 'SIMULATE').lower() == 'true'
-
-    if DEBUG:
-        logMsg('S0-Logger starting')
+        settings['SIMULATE'] = config.get('Config', 'SIMULATE').lower() == 'true'
 
     if config.has_option('Config', 'port'):
-        port = int(config.get('Config', 'port'))
+        settings['port']     = int(config.get('Config', 'port'))
 
     if config.has_option('Config', 'ip'):
-        ip = config.get('Config', 'ip')
+        settings['ip']       = config.get('Config', 'ip')
 
     if config.has_option('Cache', 'energy'):
         s0Log['data']['energy'] = float(config.get('Cache', 'energy'))
 
     if config.has_option('Config', 'ticksPerkWh'):
-        ticksKWH = int(config.get('Config', 'ticksPerkWh'))
+        settings['ticksKWH'] = int(config.get('Config', 'ticksPerkWh'))
 
     if config.has_option('Config', 'S0Pin'):
-        s0Pin    = config.get('Config', 'S0Pin')
+        settings['s0Pin']    = config.get('Config', 's0Pin')
 
     if config.has_option('Config', 's0Blink'):
-        s0Blink  = config.get('Config', 's0Blink').lower() == 'true'
+        settings['s0Blink']  = config.get('Config', 's0Blink').lower() == 'true'
 
     if DEBUG:
         logMsg('Config loaded')
@@ -284,13 +277,13 @@ def saveConfig(configFileName):
     if not config.has_section('Cache'):
         config.add_section('Cache')
 
-    config.set('Config', 'DEBUG',       str(DEBUG))
-    config.set('Config', 'SIMULATE',    str(SIMULATE))
-    config.set('Config', 's0Blink',     str(s0Blink))
-    config.set('Config', 'port',        str(port))
-    config.set('Config', 'ticksPerkWh', str(ticksKWH))
-    config.set('Config', 'ip',          ip)
-    config.set('Config', 'S0Pin',       s0Pin)
+    config.set('Config', 'DEBUG',       str(settings['DEBUG']))
+    config.set('Config', 'SIMULATE',    str(settings['SIMULATE']))
+    config.set('Config', 's0Blink',     str(settings['s0Blink']))
+    config.set('Config', 'port',        str(settings['port']))
+    config.set('Config', 'ticksPerkWh', str(settings['ticksKWH']))
+    config.set('Config', 'ip',              settings['ip'])
+    config.set('Config', 's0Pin',           settings['s0Pin'])
     config.set('Cache',  'energy',      s0Log['data']['energy'])
 
     with open(configFileName, 'w') as configFile:
@@ -309,7 +302,7 @@ def updateConfig(configFileName):
     if not config.has_section('Cache'):
         config.add_section('Cache')
 
-    config.set('Cache',  'energy',      s0Log['data']['energy'])
+    config.set('Cache', 'energy', s0Log['data']['energy'])
 
     with open(configFileName, 'w') as configFile:
         config.write(configFile)
@@ -317,10 +310,12 @@ def updateConfig(configFileName):
     if DEBUG:
         logMsg('Config updated')
 
+
+
 ### ===============================================
 ### MAIN
 ### ===============================================
-settings = {}
+# Data structure for S0 log
 s0Log    = {
     'data': {
         'energy'  : 0.0,
@@ -340,27 +335,31 @@ s0Log    = {
         }
     }
 s0Log['data']['time'] = strDateTime()
-lastTrigger           = time.time()
 
-# default settings
-DEBUG                 = False
-SIMULATE              = True
-settings['configFileName'] = 'config/s0logger.conf'
-ticksKWH              = 1000
-settings['port']           = 8080
-settings['ip']             = '0.0.0.0'
-s0Pin                 = 'XIO-P1'
-s0Blink               = True
-settings['triggerActive']  = False
+# Define default settings
+settings = {
+    'DEBUG'          = False,
+    'SIMULATE'       = True,
+    'configFileName' = 'config/s0logger.conf',
+    'ticksKWH'       = 1000,
+    'port'           = 8080,
+    'ip'             = '0.0.0.0',
+    's0Pin'          = 'XIO-P1',
+    's0Blink'        = False,
+    'triggerActive'  = False
+    }
+setttings['lastTrigger'] = time.time()
 
 # Open syslog
 syslog.openlog(ident="S0-Logger",logoption=syslog.LOG_PID, facility=syslog.LOG_LOCAL0)
 
-# Check for configs
+# Read config in ConfigFileName
 config = ConfigParser.ConfigParser()
-
 loadConfig(settings['configFileName'])
 saveConfig(settings['configFileName'])
+
+if settings['DEBUG']:
+    logMsg('S0-Logger starting')
 
 # Switch status LED off
 statusLED(0)
@@ -368,6 +367,7 @@ statusLED(0)
 # Config GPIO
 configGPIO(settings['s0Pin'])
 
+# Register handle at process exit
 atexit.register(cleanup)
 
 # Start HTTP server for REST API
