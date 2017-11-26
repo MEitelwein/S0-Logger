@@ -1,6 +1,7 @@
 S0-Logger for digital powermeters, using a CHIP microcontroller and FHEM
 
 Author: Michael Eitelwein (michael@eitelwein.net)
+Source: https://gitlab.eitelwein.net/MEitelwein/S0-Logger
 
 Description
 ===========
@@ -13,25 +14,25 @@ like RaspberryPi, Arduino or others. As this solution is based on the
 Adafruit GPIO library, it is easy to port to many different 
 microcontroller boards.
 
-I am using one of the nice C.H.I.P. boards of Next Thing Corp 
+My favorite microntroller for IoT devices is the C.H.I.P. board of Next Thing Corp 
 (https://www.nextthing.co/), which provides full Debian linux, GPIO and WLAN
-for about $9 USD (!). It is easy to setup and use and very 
-compatible to RaspberryPI stuff.
+for about $9 USD (!). It is extremely easy to setup and use and pretty  
+compatible to existing RaspberryPI stuff.
 
 The python app on the C.H.I.P is running as a wsgi application under apache2
-to provide the s0 data via a simple REST API using the bottle framwork.
+and is providing the s0 data via a simple REST API based on the bottle framwork.
 
-My SmartHome is managed by the open source solution FHEM, which is perfectly
-configurable and programmable - you need to love PERL though :-)
-FHEM can simply add a new device by parsing the HTML output of a REST API 
-capable sensor. JSON data can be interpreted directly, which makes it very 
-easy to deal with complex data transfers. More info about FHEM can be found
+My smart home is managed by the open source platform FHEM, which is perfectly
+configurable and programmable - you just need to love PERL though :-)
+FHEM can simply add a new device by parsing the HTML output of IoT devices 
+that expose REST APIs. As JSON data can be interpreted directly, it is very 
+easy to manage the data transfers. More info about FHEM can be found
 at http://fhem.de
 
 
 Wiring
 ======
-The power meter usually provides a S0- and S0+ port being internally
+The power meter usually provides a S0- and S0+ port which is internally
 connected to an optocoppler. At every trigger it short circuits S0+ and S0-.
 
 Connecting this to the GPIO ports of a microcontroller is simple:
@@ -59,7 +60,7 @@ Connecting this to the GPIO ports of a microcontroller is simple:
 
 The pull-down resistor should have between 2k to 5k Ohm. The value actually
 does not matter too much as the pin is pulled to 3V3 only for 30ms to 90 ms 
-depending on the powermeter.
+depending on the design of the powermeter.
 
 As a power source I use a stabilized 5V source like this one
   Mean Well Hutschienennetzteil DR-15-5 , 5V
@@ -69,8 +70,8 @@ As a power source I use a stabilized 5V source like this one
 Installation and Configuration
 ==============================
 
-When the standard Debian is running on the CHIP, log in as your favorite user
-equipped with sudo rights.
+Whith standard Debian running on the CHIP device, just log in as your favorite
+user who is equipped with sudo rights.
 
 1.) Install CHIP_IO library for CHIP. Many thanks to Robert Wolterman
     for creating this library.
@@ -86,12 +87,16 @@ equipped with sudo rights.
       $ cd ..
 
 
-2.) Install the s0logger scripts 
+2.) Install the s0logger scripts (assuming apache runs with group www-data)
 
       $ git clone https://gitlab.eitelwein.net/MEitelwein/S0-Logger
-      $ cd S0-Logger
+      $ sudo mv S0-Logger /var/opt
+      $ cd /var/opt/S0-Logger
+      $ sudo chgrp www-data /var/opt/S0-Logger
+      $ sudo chmod g=rx /var/opt/S0-Logger
       $ sudo mkdir /var/www/s0logger /var/www/s0logger/config
-      $ sudo chgrp www-data /var/www/s0logger/config
+      $ sudo chgrp www-data /var/www/s0logger /var/www/s0logger/config
+      $ sudo chmod g=rx /var/www/s0logger
       $ sudo chmod g=rwx /var/www/s0logger/config
       $ sudo a2dismod mpm_event
       $ sudo a2enmod  mpm_worker wsgi
@@ -147,11 +152,11 @@ equipped with sudo rights.
     to True and watch the output in apache2's error log (see section 6).
 
     Apache2 will call the script request.wsgi at startup because s0logger.wsgi
-    will only be loaded when an http request is done to s0logger's sub-url 
-    http://<CHIP-HOSTNAME>/s0.
+    will only be loaded when the first http request is done to s0logger's 
+    sub-url http://<CHIP-HOSTNAME>/s0.
     Calling s0logger.wsgi per WSGIImportScript would create 2 processes of
     s0logger and mess up access to global variables. May need to find a nicer
-    way of securing thread-safeness at some time in the future.
+    way of securing thread-safeness some time in the future.
 
 
 5.) The script uses the config file /var/www/s0logger/config/s0logger.conf which 
@@ -171,7 +176,7 @@ equipped with sudo rights.
            [Cache]
            energy = 0
 
-    Parameters ip and port only impact the bottle debug server. For production,
+    Parameters ip and port only impact bottle's debug server. For production,
     change the apache2 settings in the files apache2-*-s0logger.conf .
 
     Typically, you need to check how many triggers your powermeter 
