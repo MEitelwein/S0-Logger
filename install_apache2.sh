@@ -4,11 +4,13 @@ if [ -e /var/www/s0logger ]; then
     sudo rm -rf /var/www/s0logger
 fi
 
+
 sudo mkdir /var/www/s0logger /var/www/s0logger/config
-sudo chgrp www-data /var/www/s0logger/config
+sudo chgrp www-data /var/www/s0logger /var/www/s0logger/config
+sudo chmod g=rx  /var/www/s0logger
 sudo chmod g=rwx /var/www/s0logger/config
-#sudo a2dismod mpm_event
-#sudo a2enmod  mpm_worker 
+sudo a2dismod mpm_event
+sudo a2enmod  mpm_worker 
 sudo a2enmod wsgi
 sudo a2dissite 000-default.conf
 
