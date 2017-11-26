@@ -18,11 +18,11 @@
 # 
 # Processing of the s0 signal is indicated by the C.H.I.P.
 # status LED going on and off during GPIO processing
-# 
 # Configs in file /etc/s0logger (will be generated if not existing)
 #   debug       = True | False      Print DEBUG output
 #   simulate    = True | False      Do not use GPIO HW but simulate S0 signals
 #   pidfile     = <path/pidfile>    Where to store pid
+# 
 #   htmlfile    = <path/file>       HTML file to be generated
 #   s0pin       = <GPIO_PIN>        Which PIN to poll for s0
 #   ticksperkwh = <number of ticks> See manual of S0 signal source
@@ -41,7 +41,30 @@ import ConfigParser
 import json
 import atexit
 from bottle import Bottle, route, run, template, request
-import CHIP_IO.GPIO as GPIO
+#import CHIP_IO.GPIO as GPIO
+
+
+### Set bottle app up
+### ------------------------------------------------
+app      = Bottle()
+# Define default settings
+settings = {
+    'DEBUG'          : True,
+    'SIMULATE'       : True,
+    'configFileName' : 'config/s0logger.conf',
+    'ticksKWH'       : 1000,
+    'port'           : 8080,
+    'ip'             : '0.0.0.0',
+    's0Pin'          : 'XIO-P1',
+    's0Blink'        : False,
+    'triggerActive'  : False,
+    'url'            : '/s0',
+    'urlPath'        : '/s0'
+    }
+
+# Apache2 defines urlPath in its own config 
+if __name__ != '__main__':
+    settings['urlPath'] = ''
 
 ### Reset GPIO when exiting
 ### ------------------------------------------------
@@ -72,18 +95,6 @@ def logMsg (msg):
 def strDateTime():
     now = datetime.datetime.now()
     return now.strftime("%d.%m.%Y %H:%M:%S")
-
-
-### Set bottle app up
-### ------------------------------------------------
-app = Bottle()
-url = '/s0'
-
-# In dev/debug mode add 's0' to URL
-if __name__ == '__main__':
-    settings['urlPath'] = url
-else:
-    settings['urlPath'] = ''
 
 
 ### REST API /electricity to get S0 log
@@ -143,7 +154,7 @@ def apiSetConfig():
         saveConfig(settings['configFileName'])
         return msg       
     else:
-        return template('config.tpl', energy=old, path=url, debug=settings['DEBUG'], simulate=settings['SIMULATE'], blink=settings['s0Blink'])
+        return template('config.tpl', energy=old, path=settings['url'], debug=settings['DEBUG'], simulate=settings['SIMULATE'], blink=settings['s0Blink'])
 
 
 ### Start built-in server for dev/debug
@@ -261,7 +272,7 @@ def loadConfig(configFileName):
     if config.has_option('Config', 's0Blink'):
         settings['s0Blink']  = config.get('Config', 's0Blink').lower() == 'true'
 
-    if DEBUG:
+    if settings['DEBUG']:
         logMsg('Config loaded')
 
 
@@ -289,7 +300,7 @@ def saveConfig(configFileName):
     with open(configFileName, 'w') as configFile:
         config.write(configFile)
 
-    if DEBUG:
+    if settings['DEBUG']:
         logMsg('Config saved')
 
 
@@ -307,7 +318,7 @@ def updateConfig(configFileName):
     with open(configFileName, 'w') as configFile:
         config.write(configFile)
 
-    if DEBUG:
+    if settings['DEBUG']:
         logMsg('Config updated')
 
 
@@ -336,19 +347,7 @@ s0Log    = {
     }
 s0Log['data']['time'] = strDateTime()
 
-# Define default settings
-settings = {
-    'DEBUG'          = False,
-    'SIMULATE'       = True,
-    'configFileName' = 'config/s0logger.conf',
-    'ticksKWH'       = 1000,
-    'port'           = 8080,
-    'ip'             = '0.0.0.0',
-    's0Pin'          = 'XIO-P1',
-    's0Blink'        = False,
-    'triggerActive'  = False
-    }
-setttings['lastTrigger'] = time.time()
+settings['lastTrigger'] = time.time()
 
 # Open syslog
 syslog.openlog(ident="S0-Logger",logoption=syslog.LOG_PID, facility=syslog.LOG_LOCAL0)
@@ -373,6 +372,6 @@ atexit.register(cleanup)
 # Start HTTP server for REST API
 # start only if not called by apache-wsgi
 if __name__ == '__main__':
-    apiServer(settings['ip'], settings['port'], DEBUG)
+    apiServer(settings['ip'], settings['port'], settings['DEBUG'])
 
 
