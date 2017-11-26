@@ -195,26 +195,88 @@ def S0Trigger(channel):
     # write cache info to config file every 1 kWh
     # to still have energy reading in case of power loss
     if (s0Log['data']['energy'] % 1000) == 0:
-        saveConfig()
+        updateConfig(settings['configFileName'])
     statusLED(0)
+
+
+### Set GPIO up
+### ------------------------------------------------
+def configGPIO(pin):
+    if not settings['triggerActive']:
+        if not SIMULATE:
+            # Config GPIO pin for pull down
+            # and detection of rising edge
+            GPIO.cleanup(pin)
+            GPIO.setup(pin, GPIO.IN, GPIO.PUD_DOWN)
+            GPIO.add_event_detect(pin, GPIO.RISING)
+            GPIO.add_event_callback(pin, S0Trigger)
+        settings['triggerActive'] = True
+        logMsg("Setting up S0-Logger on " + pin)
+    else:
+        logMsg("Trigger already active on " + pin)
 
 
 ### Create config file if not existing
 ### ------------------------------------------------
-def createConfig():
+def createConfig(configFileName):
     if not config.has_section('Config'):
         config.add_section('Config')
     if not config.has_section('Cache'):
         config.add_section('Cache')
-    with open(configFile, 'w') as configfile:
-        config.write(configfile)
+    with open(configFileName, 'w') as configFile:
+        config.write(configFile)
 
 
-### Save Cache section in config file before exiting
+### Load config file and create if not existing
 ### ------------------------------------------------
-def saveConfig():
+def loadConfig(configFileName):
+    # Create configFile if not exisiting
+    if not os.path.isfile(configFileName):
+        createConfig(configFileName)
+
+    # Try to read in config
+    config.read(configFileName)
+    # Check for sections in config
+    if not (config.has_section('Config') and config.has_section('Cache')):
+        logMsg('Config file misses section "Config" or "Cache" - will create new configuration')
+        createConfig(configFileName)
+
+    if config.has_option('Config', 'DEBUG'):
+        DEBUG    = config.get('Config', 'DEBUG').lower() == 'true'
+
+    if config.has_option('Config', 'SIMULATE'):
+        SIMULATE = config.get('Config', 'SIMULATE').lower() == 'true'
+
+    if DEBUG:
+        logMsg('S0-Logger starting')
+
+    if config.has_option('Config', 'port'):
+        port = int(config.get('Config', 'port'))
+
+    if config.has_option('Config', 'ip'):
+        ip = config.get('Config', 'ip')
+
+    if config.has_option('Cache', 'energy'):
+        s0Log['data']['energy'] = float(config.get('Cache', 'energy'))
+
+    if config.has_option('Config', 'ticksPerkWh'):
+        ticksKWH = int(config.get('Config', 'ticksPerkWh'))
+
+    if config.has_option('Config', 'S0Pin'):
+        s0Pin    = config.get('Config', 'S0Pin')
+
+    if config.has_option('Config', 's0Blink'):
+        s0Blink  = config.get('Config', 's0Blink').lower() == 'true'
+
+    if DEBUG:
+        logMsg('Config loaded')
+
+
+### Save config file
+### ------------------------------------------------
+def saveConfig(configFileName):
     # re-read in case it had been manually edited
-    config.read(configFile)
+    config.read(configFileName)
 
     if not config.has_section('Config'):
         config.add_section('Config')
@@ -222,22 +284,44 @@ def saveConfig():
     if not config.has_section('Cache'):
         config.add_section('Cache')
 
-    config.set('Config', 'DEBUG',    str(DEBUG))
-    config.set('Config', 'SIMULATE', str(SIMULATE))
-    config.set('Config', 's0Blink',  str(s0Blink))
-    config.set('Cache',  'energy',   s0Log['data']['energy'])
+    config.set('Config', 'DEBUG',       str(DEBUG))
+    config.set('Config', 'SIMULATE',    str(SIMULATE))
+    config.set('Config', 's0Blink',     str(s0Blink))
+    config.set('Config', 'port',        str(port))
+    config.set('Config', 'ticksPerkWh', str(ticksKWH))
+    config.set('Config', 'ip',          ip)
+    config.set('Config', 'S0Pin',       s0Pin)
+    config.set('Cache',  'energy',      s0Log['data']['energy'])
 
-    with open(configFile, 'w') as configfile:
-        config.write(configfile)
+    with open(configFileName, 'w') as configFile:
+        config.write(configFile)
 
     if DEBUG:
         logMsg('Config saved')
 
 
+### Update Cache section in config file before exiting
+### --------------------------------------------------
+def updateConfig(configFileName):
+    # re-read in case it had been manually edited
+    config.read(configFileName)
+
+    if not config.has_section('Cache'):
+        config.add_section('Cache')
+
+    config.set('Cache',  'energy',      s0Log['data']['energy'])
+
+    with open(configFileName, 'w') as configFile:
+        config.write(configFile)
+
+    if DEBUG:
+        logMsg('Config updated')
+
 ### ===============================================
 ### MAIN
 ### ===============================================
-s0Log = {
+settings = {}
+s0Log    = {
     'data': {
         'energy'  : 0.0,
         'power'   : 0,
@@ -258,87 +342,37 @@ s0Log = {
 s0Log['data']['time'] = strDateTime()
 lastTrigger           = time.time()
 
-# default values for config
+# default settings
 DEBUG                 = False
 SIMULATE              = True
-configFile            = 'config/s0logger.conf'
+settings['configFileName'] = 'config/s0logger.conf'
 ticksKWH              = 1000
-port                  = 8080
-ip                    = '0.0.0.0'
+settings['port']           = 8080
+settings['ip']             = '0.0.0.0'
 s0Pin                 = 'XIO-P1'
 s0Blink               = True
-triggerActive         = False
+settings['triggerActive']  = False
 
 # Open syslog
 syslog.openlog(ident="S0-Logger",logoption=syslog.LOG_PID, facility=syslog.LOG_LOCAL0)
 
 # Check for configs
 config = ConfigParser.ConfigParser()
-if not os.path.isfile(configFile):
-    createConfig()    
 
-config.read(configFile)
-if not config.has_section('Config'):
-    logMsg('Config file misses section \'Config\' - will create new configuration')
-    createConfig()
-
-if config.has_option('Config', 'DEBUG'):
-    DEBUG    = config.get('Config', 'DEBUG').lower() == 'true'
-
-if config.has_option('Config', 'SIMULATE'):
-    SIMULATE = config.get('Config', 'SIMULATE').lower() == 'true'
-
-if DEBUG:
-    logMsg('S0-Logger starting')
-
-if config.has_option('Config', 'port'):
-    port = int(config.get('Config', 'port'))
-else:
-    config.set('Config', 'port', str(port))
-
-if config.has_option('Config', 'ip'):
-    ip = config.get('Config', 'ip')
-else:
-    config.set('Config', 'ip', ip)
-
-if config.has_option('Cache', 'energy'):
-    s0Log['data']['energy'] = float(config.get('Cache', 'energy'))
-
-if config.has_option('Config', 'ticksPerkWh'):
-    ticksKWH = int(config.get('Config', 'ticksPerkWh'))
-else:
-    config.set('Config', 'ticksPerkWh', str(ticksKWH))
-
-if config.has_option('Config', 'S0Pin'):
-    s0Pin    = config.get('Config', 'S0Pin')
-else:
-    config.set('Config', 'S0Pin', s0Pin)
-
-if config.has_option('Config', 's0Blink'):
-    s0Blink  = config.get('Config', 's0Blink').lower() == 'true'
-
-saveConfig()
+loadConfig(settings['configFileName'])
+saveConfig(settings['configFileName'])
 
 # Switch status LED off
 statusLED(0)
 
-# Config GPIO pin for pull down and detection of rising edge
-if not triggerActive:
-    if not SIMULATE:
-        GPIO.cleanup(s0Pin)
-        GPIO.setup(s0Pin, GPIO.IN, GPIO.PUD_DOWN)
-        GPIO.add_event_detect(s0Pin, GPIO.RISING)
-        GPIO.add_event_callback(s0Pin, S0Trigger)
-    triggerActive = True
-    logMsg("Setting up S0-Logger on " + s0Pin)
-else:
-    logMsg("Trigger already active on " + s0Pin)
+# Config GPIO
+configGPIO(settings['s0Pin'])
 
 atexit.register(cleanup)
 
 # Start HTTP server for REST API
 # start only if not called by apache-wsgi
 if __name__ == '__main__':
-    apiServer(ip, port, DEBUG)
+    apiServer(settings['ip'], settings['port'], DEBUG)
 
 
