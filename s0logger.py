@@ -217,6 +217,7 @@ def S0Trigger(channel):
 def configGPIO(pin):
     if not settings['triggerActive']:
         if not settings['SIMULATE']:
+            import CHIP_IO.GPIO as GPIO
             # Config GPIO pin for pull down
             # and detection of rising edge
             GPIO.cleanup(pin)
@@ -340,7 +341,7 @@ s0Log    = {
         'time'    : 0,
         'dtime'   : 0,
         'S0-ticks': 0,
-        'version' : 1.4
+        'version' : 1.41
         },
     'units': {
         'energy'  : 'Wh',
