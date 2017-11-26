@@ -41,7 +41,6 @@ import ConfigParser
 import json
 import atexit
 from bottle import Bottle, route, run, template, request
-#import CHIP_IO.GPIO as GPIO
 
 
 ### Set bottle app up
@@ -61,6 +60,10 @@ settings = {
     'url'            : '/s0',
     'urlPath'        : '/s0'
     }
+
+# Load GPIO module if not simulating
+if not settings['SIMULATE']:
+    import CHIP_IO.GPIO as GPIO
 
 # Apache2 defines urlPath in its own config 
 if __name__ != '__main__':
@@ -132,6 +135,7 @@ def apiSetConfig():
     old = s0Log['data']['energy']
 
     if request.GET.save:
+        oldSim = settings['SIMULATE']
         # Will need to add checks here that API is used correctly
         new = request.GET.energy.strip()
         new = new.replace(',', '.')
@@ -151,6 +155,8 @@ def apiSetConfig():
         msg += '<li>Simulation: ' + str(settings['SIMULATE']) + '</li>'
         msg += '<li>s0Blink: '    + str(settings['s0Blink'])  + '</li>'
         msg += '</ul>'
+        if oldSim and not settings['SIMULATE']:
+            msg += '<h2>Simulation mode disabled - restart of webserver needed!'
         saveConfig(settings['configFileName'])
         return msg       
     else:
