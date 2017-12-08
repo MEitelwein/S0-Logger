@@ -14,10 +14,11 @@ sudo a2enmod  mpm_worker
 sudo a2enmod wsgi
 sudo a2dissite 000-default.conf
 
-a=$(pwd); sudo ln -s ${a}/s0logger.py /var/www/s0logger
-a=$(pwd); sudo ln -s ${a}/s0logger.wsgi /var/www/s0logger
-a=$(pwd); sudo ln -s ${a}/request.wsgi /var/www/s0logger
-a=$(pwd); sudo ln -s ${a}/config.tpl /var/www/s0logger
+a=$(pwd)
+sudo ln -s ${a}/s0logger.py /var/www/s0logger
+sudo ln -s ${a}/s0logger.wsgi /var/www/s0logger
+sudo ln -s ${a}/request.wsgi /var/www/s0logger
+sudo ln -s ${a}/config.tpl /var/www/s0logger
 
 if [ -e /etc/apache2/conf-enabled/s0logger.conf ]; then
     sudo rm /etc/apache2/conf-enabled/s0logger.conf
