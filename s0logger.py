@@ -337,7 +337,7 @@ s0Log    = {
         'time'    : 0,
         'dtime'   : 0,
         'S0-ticks': 0,
-        'version' : 1.41
+        'version' : 1.42
         },
     'units': {
         'energy'  : 'Wh',
