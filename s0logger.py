@@ -26,6 +26,7 @@
 # 
 #   htmlfile    = <path/file>       HTML file to be generated
 #   s0pin       = <GPIO_PIN>        Which PIN to poll for s0
+#   LEDpin      = <GOPI_PIN>        Pin with status LED on Raspi
 #   ticksperkwh = <number of ticks> See manual of S0 signal source
 #   s0blink     = True | False      Blink status LED with S0 signal
 #   port        = <port-numer>      Port used by built-in http-server
@@ -57,6 +58,7 @@ settings = {
     'port'           : 8080,
     'ip'             : '0.0.0.0',
     's0Pin'          : 'XIO-P1',
+    'LEDPin'         : 13,
     's0Blink'        : False,
     'triggerActive'  : False,
     'url'            : '/s0',
@@ -73,8 +75,18 @@ def cleanup():
     logMsg("Cleaning up S0-Logger on " + settings['s0Pin'])
 
     if not settings['SIMULATE']:
-        GPIO.remove_event_detect(settings['s0Pin'])
-        GPIO.cleanup(settings['s0Pin'])
+        if ( settings['HW'] == 'CHIP' ):
+            import CHIP.GPIO as GPIO            
+            GPIO.remove_event_detect(settings['s0Pin'])
+            GPIO.cleanup(settings['s0Pin'])
+        elif ( settings['HW'] == 'RASPI' ):
+            import RPi.GPIO as GPIO
+            GPIO.remove_event_detect(int(settings['s0Pin']))
+            GPIO.cleanup(int(settings['s0Pin']))
+            GPIO.output(settings['LEDPin'], GPIO.LOW)
+            GPIO.cleanup(settings['LEDPin'])
+        else:
+            lsgMsg("Unknown hardware " + settings['HW'])
     
     saveConfig(settings['configFileName'])
 
@@ -179,8 +191,10 @@ def statusLED(mode):
                 # Switch C.H.I.P. status LED on
                 if not settings['SIMULATE']:
                     os.system('/usr/sbin/i2cset -f -y 0 0x34 0x93 0x1')
-            #elif ( settings['HW'] == 'RASPI' ):
-                # nothing implemented yet for Raspi
+            elif ( settings['HW'] == 'RASPI' ):
+                # LED is connected to GPIO27 on pin 13
+                import RPi.GPIO as GPIO
+                GPIO.output(settings['LEDPin'], GPIO.HIGH)
             else:
                 logMsg("Unknown hardware platform " + settings['HW'])
         else:
@@ -188,8 +202,9 @@ def statusLED(mode):
                 # Switch C.H.I.P. status LED off
                 if not settings['SIMULATE']:
                     os.system('/usr/sbin/i2cset -f -y 0 0x34 0x93 0x0')
-            #elif ( settings['HW'] == 'RASPI' ):
-                # nothing implemented yet for Raspi
+            elif ( settings['HW'] == 'RASPI' ):
+                import RPi.GPIO as GPIO
+                GPIO.output(settings['LEDPin'], GPIO.LOW)
             else:
                 logMsg("Unknown hardware platform " + settings['HW'])
 
@@ -224,28 +239,38 @@ def S0Trigger(channel):
 
 ### Initialize GPIO system
 ### ------------------------------------------------
-def configGPIO(pin):
+def configGPIO(s0pin, LEDPin):
     if not settings['triggerActive']:
         if not settings['SIMULATE']:
             if ( settings['HW'] == 'CHIP' ):
                 import CHIP_IO.GPIO as GPIO
+                # Config GPIO pin for pull down
+                # and detection of rising edge
+                GPIO.cleanup(s0pin)
+                GPIO.setup(s0pin, GPIO.IN, GPIO.PUD_DOWN)
+                GPIO.add_event_detect(s0pin, GPIO.RISING)
+                GPIO.add_event_callback(s0pin, S0Trigger)
             elif ( settings['HW'] == 'RASPI' ):
                 import RPi.GPIO as GPIO
                 GPIO.setmode(GPIO.BOARD)
                 # Raspi accepts only integer values for pin
-                pin = int(pin)
+                s0pin = int(s0pin)
+                # Status LED is connected to LEDPin
+                GPIO.cleanup(LEDPin)
+                GPIO.setup(LEDPin, GPIO.OUT)
+                GPIO.output(LEDPin, GPIO.LOW)
+                # Config GPIO pin for pull down
+                # and detection of rising edge
+                GPIO.cleanup(s0pin)
+                GPIO.setup(s0pin, GPIO.IN, GPIO.PUD_DOWN)
+                GPIO.add_event_detect(s0pin, GPIO.RISING)
+                GPIO.add_event_callback(s0pin, S0Trigger)
             else:
                 logMsg("Unknown hardware platform " + settings['HW'])
-            # Config GPIO pin for pull down
-            # and detection of rising edge
-            GPIO.cleanup(pin)
-            GPIO.setup(pin, GPIO.IN, GPIO.PUD_DOWN)
-            GPIO.add_event_detect(pin, GPIO.RISING)
-            GPIO.add_event_callback(pin, S0Trigger)
         settings['triggerActive'] = True
-        logMsg("Setting up S0-Logger on " + str(pin))
+        logMsg("Setting up S0-Logger on " + str(s0pin))
     else:
-        logMsg("Trigger already active on " + str(pin))
+        logMsg("Trigger already active on " + str(s0pin))
 
 
 ### Create config file if not existing
@@ -297,6 +322,9 @@ def loadConfig(configFileName):
     if config.has_option('Config', 'S0Pin'):
         settings['s0Pin']    = config.get('Config', 's0Pin')
 
+    if config.has_option('Config', 'LEDPin'):
+        settings['LEDPin']   = int(config.get('Config', 'LEDPin'))
+
     if config.has_option('Config', 's0Blink'):
         settings['s0Blink']  = config.get('Config', 's0Blink').lower() == 'true'
 
@@ -324,6 +352,7 @@ def saveConfig(configFileName):
     config.set('Config', 'ticksPerkWh', str(settings['ticksKWH']))
     config.set('Config', 'ip',              settings['ip'])
     config.set('Config', 's0Pin',           settings['s0Pin'])
+    config.set('Config', 'LEDPin',      str(settings['LEDPin']))
     config.set('Cache',  'energy',      str(s0Log['data']['energy']))
 
     with open(configFileName, 'w') as configFile:
@@ -389,11 +418,11 @@ saveConfig(settings['configFileName'])
 if settings['DEBUG']:
     logMsg('S0-Logger starting')
 
+# Config GPIO
+configGPIO(settings['s0Pin'], settings['LEDPin'])
+
 # Switch status LED off
 statusLED(0)
-
-# Config GPIO
-configGPIO(settings['s0Pin'])
 
 # Register handle at process exit
 atexit.register(cleanup)
