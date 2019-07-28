@@ -22,7 +22,7 @@ to show how to run it on a Raspberry Zero.
 The python app is running as a wsgi application under apache2 and is providing
 the s0 data via a simple REST API based on the bottle framwork. As both micro-
 controllers support the RPI.GPIO framework, the code does not require too many
-changes.
+changes. See RPi.GPIO at https://sourceforge.net/projects/raspberry-gpio-python
 
 My smart home is managed by the open source platform FHEM, which is perfectly
 configurable and programmable - you just need to love PERL though :-)
