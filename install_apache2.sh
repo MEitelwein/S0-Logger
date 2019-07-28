@@ -1,12 +1,14 @@
 #!/bin/bash
 
+# Group name to use for apache2
+www-group="www-data"
+
 if [ -e /var/www/s0logger ]; then
     sudo rm -rf /var/www/s0logger
 fi
 
-
 sudo mkdir /var/www/s0logger /var/www/s0logger/config
-sudo chgrp www-data /var/www/s0logger /var/www/s0logger/config
+sudo chgrp ${www-group} /var/www/s0logger /var/www/s0logger/config
 sudo chmod g=rx  /var/www/s0logger
 sudo chmod g=rwx /var/www/s0logger/config
 sudo a2dismod mpm_event
