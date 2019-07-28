@@ -14,13 +14,14 @@ like RaspberryPi, Arduino or others. As this solution is based on the
 Adafruit GPIO library, it is easy to port to many different 
 microcontroller boards.
 
-My favorite microntroller for IoT devices is the C.H.I.P. board of Next Thing Corp 
-(https://www.nextthing.co/), which provides full Debian linux, GPIO and WLAN
-for about $9 USD (!). It is extremely easy to setup and use and pretty  
-compatible to existing RaspberryPI stuff.
+C.H.I.P had a really nice ARM based microcontroller for $10 running on Debian.
+I used them for many microcontroller projects like this one, but sadly they
+went insolvent! So this project runs on C.H.I.P., but I also added a new part
+to show how to run it on a Raspberry Zero.
 
-The python app on the C.H.I.P is running as a wsgi application under apache2
-and is providing the s0 data via a simple REST API based on the bottle framwork.
+The python app is running as a wsgi application under apache2 and is providing
+the s0 data via a simple REST API based on the bottle framwork. Only difference
+between running on C.H.I.P and Raspberry is the GPIO framework.
 
 My smart home is managed by the open source platform FHEM, which is perfectly
 configurable and programmable - you just need to love PERL though :-)
