@@ -73,7 +73,7 @@ Installation and Configuration
 Whith standard Debian running on the CHIP device, just log in as your favorite
 user who is equipped with sudo rights.
 
-0.) Basic installation and setup, e.g. apache2 and python
+1.) Basic installation and setup, e.g. apache2 and python
 
       $ sudo apt-get update
       $ sudo mkdir /var/log/apache2
@@ -84,7 +84,7 @@ user who is equipped with sudo rights.
       $ sudo apt-get install build-essential python-dev python-pip 
       $ sudo apt-get install python-smbus flex bison chip-dt-overlays
 
-1.) Install CHIP_IO library for CHIP. Many thanks to Robert Wolterman
+2.) Install CHIP_IO library for CHIP. Many thanks to Robert Wolterman
     for creating this library.
 
       $ git clone https://github.com/xtacocorex/CHIP_IO
@@ -93,7 +93,7 @@ user who is equipped with sudo rights.
       $ cd ..
 
 
-2.) Install the s0logger scripts (assuming apache runs with group www-data)
+3.) Install the s0logger scripts (assuming apache runs with group www-data)
 
       $ git clone https://gitlab.eitelwein.net/MEitelwein/S0-Logger
       $ sudo mv S0-Logger /var/opt
@@ -115,7 +115,7 @@ user who is equipped with sudo rights.
       $ a=$(pwd); sudo ln -s ${a}/apache2-sites-s0logger.conf /etc/apache2/sites-enabled/s0logger.conf
 
 
-3.) Give apache2 access to gpio (assuming uid is www-data)
+4.) Give apache2 access to gpio (assuming uid is www-data)
 
       $ sudo groupadd gpio
       $ sudo adduser www-data gpio
@@ -127,7 +127,7 @@ user who is equipped with sudo rights.
       chmod -R g+rw /sys/class/gpio
 
 
-4.) Connect powermeter's S0 port with the CHIP as explained above and 
+5.) Connect powermeter's S0 port with the CHIP as explained above and 
     start logging with starting Apache
 
       $ sudo systemctl restart apache2 
@@ -165,7 +165,7 @@ user who is equipped with sudo rights.
     way of securing thread-safeness some time in the future.
 
 
-5.) The script uses the config file /var/www/s0logger/config/s0logger.conf which 
+6.) The script uses the config file /var/www/s0logger/config/s0logger.conf which 
     it creates automatically. The parameters are self-explaining, it will also
     be used to cache the total energy when the script is not running.
     Here is the default config, you should only change values in [Config]
