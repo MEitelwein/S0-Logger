@@ -77,8 +77,8 @@ user who is equipped with sudo rights.
     for creating this library.
 
       $ sudo apt-get update
-      $ sudo echo "tmpfs   /ramdisk   tmpfs  defaults  0  1" >> /etc/fstab
       $ sudo mkdir /var/log/apache2
+      $ sudo echo "tmpfs   /var/log/apache2   tmpfs  defaults  0  1" >> /etc/fstab
       $ sudo mount -a
       $ sudo apt-get install python git python-bottle apache2 
       $ sudo apt-get install libapache2-mod-wsgi apache2-dev curl
