@@ -20,8 +20,9 @@ went insolvent! So this project runs on C.H.I.P., but I also added a new part
 to show how to run it on a Raspberry Zero.
 
 The python app is running as a wsgi application under apache2 and is providing
-the s0 data via a simple REST API based on the bottle framwork. Only difference
-between running on C.H.I.P and Raspberry is the GPIO framework.
+the s0 data via a simple REST API based on the bottle framwork. As both micro-
+controllers support the RPI.GPIO framework, the code does not require too many
+changes.
 
 My smart home is managed by the open source platform FHEM, which is perfectly
 configurable and programmable - you just need to love PERL though :-)
@@ -80,19 +81,23 @@ user who is equipped with sudo rights.
       $ sudo mkdir /var/log/apache2
       $ sudo echo "tmpfs   /var/log/apache2   tmpfs  defaults  0  1" >> /etc/fstab
       $ sudo mount -a
-      $ sudo apt-get install python git python-bottle apache2 
-      $ sudo apt-get install libapache2-mod-wsgi apache2-dev curl
-      $ sudo apt-get install build-essential python-dev python-pip 
-      $ sudo apt-get install python-smbus flex bison chip-dt-overlays
+      $ sudo apt install python3 git python3-bottle apache2 
+      $ sudo apt install libapache2-mod-wsgi-py3 apache2-dev curl
+      $ sudo apt install build-essential python3-dev python3-pip 
+      $ sudo apt install python3-smbus flex bison
 
-2.) Install CHIP_IO library for CHIP. Many thanks to Robert Wolterman
+2a) C.H.I.P. only: Install CHIP_IO library. Many thanks to Robert Wolterman
     for creating this library.
 
+      $ sudo apt install chip-dt-overlays
       $ git clone https://github.com/xtacocorex/CHIP_IO
       $ cd CHIP_IO
-      $ sudo python setup.py install
+      $ sudo python3 setup.py install
       $ cd ..
 
+2b) Raspberry only: Install RPI.GPIO library.
+
+      $ sudo apt install python3-rpi.gpio
 
 3.) Install the s0logger scripts (assuming apache runs with group www-data)
 
