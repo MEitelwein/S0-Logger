@@ -1,4 +1,4 @@
-S0-Logger for digital powermeters, using a CHIP microcontroller and FHEM
+S0-Logger for digital powermeters, using a linux-based microcontroller and FHEM
 
 Author: Michael Eitelwein (michael@eitelwein.net)
 Source: https://gitlab.eitelwein.net/MEitelwein/S0-Logger
