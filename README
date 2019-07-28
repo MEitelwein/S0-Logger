@@ -100,19 +100,7 @@ user who is equipped with sudo rights.
       $ cd /var/opt/S0-Logger
       $ sudo chgrp www-data /var/opt/S0-Logger
       $ sudo chmod g=rx /var/opt/S0-Logger
-      $ sudo mkdir /var/www/s0logger /var/www/s0logger/config
-      $ sudo chgrp www-data /var/www/s0logger /var/www/s0logger/config
-      $ sudo chmod g=rx /var/www/s0logger
-      $ sudo chmod g=rwx /var/www/s0logger/config
-      $ sudo a2dismod mpm_event
-      $ sudo a2enmod  mpm_worker wsgi
-      $ sudo a2dissite 000-default.conf
-      $ a=$(pwd); sudo ln -s ${a}/s0logger.py /var/www/s0logger
-      $ a=$(pwd); sudo ln -s ${a}/s0logger.wsgi /var/www/s0logger
-      $ a=$(pwd); sudo ln -s ${a}/request.wsgi /var/www/s0logger
-      $ a=$(pwd); sudo ln -s ${a}/config.tpl /var/www/s0logger
-      $ a=$(pwd); sudo ln -s ${a}/apache2-conf-s0logger.conf /etc/apache2/conf-enabled/s0logger.conf
-      $ a=$(pwd); sudo ln -s ${a}/apache2-sites-s0logger.conf /etc/apache2/sites-enabled/s0logger.conf
+      $ ./install_apache2.sh
 
 
 4.) Give apache2 access to gpio (assuming uid is www-data)
