@@ -38,7 +38,7 @@ import time
 import datetime
 import sys
 import syslog
-import ConfigParser
+import configparser
 import json
 import atexit
 from bottle import Bottle, route, run, template, request
@@ -49,7 +49,7 @@ from bottle import Bottle, route, run, template, request
 app      = Bottle()
 # Define default settings
 settings = {
-    'HW'             : 'CHIP'
+    'HW'             : 'CHIP',
     'DEBUG'          : True,
     'SIMULATE'       : True,
     'configFileName' : 'config/s0logger.conf',
@@ -86,7 +86,7 @@ def logMsg (msg):
         msg = 'Simulating: ' + msg
 
     if settings['DEBUG']:
-        print >> sys.stderr, msg
+        print (msg, file=sys.stderr)
     else:
         syslog.syslog(syslog.LOG_INFO, msg)
 
@@ -177,7 +177,7 @@ def statusLED(mode):
                 # Switch C.H.I.P. status LED on
                 if not settings['SIMULATE']:
                     os.system('/usr/sbin/i2cset -f -y 0 0x34 0x93 0x1')
-            elif ( settings['HW'] == 'RASPI' ):
+            #elif ( settings['HW'] == 'RASPI' ):
                 # nothing implemented yet for Raspi
             else:
                 logMsg("Unknown hardware platform " + settings['HW'])
@@ -186,7 +186,7 @@ def statusLED(mode):
                 # Switch C.H.I.P. status LED off
                 if not settings['SIMULATE']:
                     os.system('/usr/sbin/i2cset -f -y 0 0x34 0x93 0x0')
-            elif ( settings['HW'] == 'RASPI' ):
+            #elif ( settings['HW'] == 'RASPI' ):
                 # nothing implemented yet for Raspi
             else:
                 logMsg("Unknown hardware platform " + settings['HW'])
@@ -271,7 +271,7 @@ def loadConfig(configFileName):
     if config.has_option('Config', 'DEBUG'):
         settings['DEBUG']    = config.get('Config', 'DEBUG').lower() == 'true'
 
-        if config.has_option('Config', 'HW'):
+    if config.has_option('Config', 'HW'):
         settings['HW']       = config.get('Config', 'HW')
 
     if config.has_option('Config', 'SIMULATE'):
@@ -319,7 +319,7 @@ def saveConfig(configFileName):
     config.set('Config', 'ticksPerkWh', str(settings['ticksKWH']))
     config.set('Config', 'ip',              settings['ip'])
     config.set('Config', 's0Pin',           settings['s0Pin'])
-    config.set('Cache',  'energy',      s0Log['data']['energy'])
+    config.set('Cache',  'energy',      str(s0Log['data']['energy']))
 
     with open(configFileName, 'w') as configFile:
         config.write(configFile)
@@ -358,7 +358,7 @@ s0Log    = {
         'time'    : 0,
         'dtime'   : 0,
         'S0-ticks': 0,
-        'version' : 1.42
+        'version' : 2.0
         },
     'units': {
         'energy'  : 'Wh',
@@ -377,7 +377,7 @@ settings['lastTrigger'] = time.time()
 syslog.openlog(ident="S0-Logger",logoption=syslog.LOG_PID, facility=syslog.LOG_LOCAL0)
 
 # Read config in ConfigFileName
-config = ConfigParser.ConfigParser()
+config = configparser.ConfigParser()
 loadConfig(settings['configFileName'])
 saveConfig(settings['configFileName'])
 
