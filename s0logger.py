@@ -231,6 +231,9 @@ def configGPIO(pin):
                 import CHIP_IO.GPIO as GPIO
             elif ( settings['HW'] == 'RASPI' ):
                 import RPi.GPIO as GPIO
+                GPIO.setmode(GPIO.BOARD)
+                # Raspi accepts only integer values for pin
+                pin = int(pin)
             else:
                 logMsg("Unknown hardware platform " + settings['HW'])
             # Config GPIO pin for pull down
@@ -240,9 +243,9 @@ def configGPIO(pin):
             GPIO.add_event_detect(pin, GPIO.RISING)
             GPIO.add_event_callback(pin, S0Trigger)
         settings['triggerActive'] = True
-        logMsg("Setting up S0-Logger on " + pin)
+        logMsg("Setting up S0-Logger on " + str(pin))
     else:
-        logMsg("Trigger already active on " + pin)
+        logMsg("Trigger already active on " + str(pin))
 
 
 ### Create config file if not existing

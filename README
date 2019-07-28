@@ -37,7 +37,10 @@ Wiring
 The power meter usually provides a S0- and S0+ port which is internally
 connected to an optocoppler. At every trigger it short circuits S0+ and S0-.
 
-Connecting this to the GPIO ports of a microcontroller is simple:
+Connecting this to the GPIO ports of a microcontroller is simple. Here 
+for the C.H.I.P. device:
+
+C.H.I.P
 
                       5V stabilized power source
                               +
@@ -59,6 +62,29 @@ Connecting this to the GPIO ports of a microcontroller is simple:
                               +
                       GND of power source
        
+
+And here for the Raspi Zero, which is simpler as the pins can be configured
+to be pulled-up or pulled-down:
+
+RASPBERRY ZERO
+                      5V stabilized power source
+                               +
+                               |
+     RASPI PINs                |                          
+     ==========                |
+     (2) 5V     +--------------+                          Powermeter PINs
+                                                          =================
+     (1) 3V3    +--------------------------------------+  S0+
+       
+     (7) GPIO4  +--------------------------------------+  S0-
+
+     (9) GND    +--------------+
+                               |
+                               |
+                               |
+                               +
+                      GND of power source
+
 
 The pull-down resistor should have between 2k to 5k Ohm. The value actually
 does not matter too much as the pin is pulled to 3V3 only for 30ms to 90 ms 
@@ -109,7 +135,7 @@ user who is equipped with sudo rights.
       $ ./install_apache2.sh
 
 
-4.) Give apache2 access to gpio (assuming uid is www-data)
+4a) Give apache2 access to gpio on C.H.I.P. (assuming uid is www-data)
 
       $ sudo groupadd gpio
       $ sudo adduser www-data gpio
@@ -121,7 +147,12 @@ user who is equipped with sudo rights.
       chmod -R g+rw /sys/class/gpio
 
 
-5.) Connect powermeter's S0 port with the CHIP as explained above and 
+4b) Give apache2 access to gpio on Raspberry PI (assuming uid is www-data)
+
+      $ sudo adduser www-data gpio
+
+
+5.) Connect powermeter's S0 port with the controller as explained above and 
     start logging with starting Apache
 
       $ sudo systemctl restart apache2 
