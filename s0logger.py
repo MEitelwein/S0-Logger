@@ -263,7 +263,8 @@ def configGPIO(s0pin, LEDPin):
                 # and detection of rising edge
                 GPIO.cleanup(s0pin)
                 GPIO.setup(s0pin, GPIO.IN, GPIO.PUD_DOWN)
-                GPIO.add_event_detect(s0pin, GPIO.RISING)
+                # The edge detection of RasPi sometimes bounces at about 330 ms
+                GPIO.add_event_detect(s0pin, GPIO.RISING, bouncetime=500)
                 GPIO.add_event_callback(s0pin, S0Trigger)
             else:
                 logMsg("Unknown hardware platform " + settings['HW'])
