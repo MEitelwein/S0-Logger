@@ -139,6 +139,7 @@ def apiSetConfig():
         new = new.replace(',', '.')
         s0Log['data']['energy'] = float(new)
         settings['DEBUG']    = request.GET.debug.strip().lower()    == 'true'
+        settings['HW']       = request.GET.hw.strip()
         settings['SIMULATE'] = request.GET.simulate.strip().lower() == 'true'
         settings['s0Blink']  = request.GET.blink.strip().lower()    == 'true'
 
@@ -150,6 +151,7 @@ def apiSetConfig():
             msg += '<li>Energy changed from '
             msg += '%s Wh to %s Wh</li>' % (old, s0Log['data']['energy'])
         msg += '<li>Debug: '      + str(settings['DEBUG'])    + '</li>'
+        msg += '<li>Hardware: '   + str(settings['HW'])       + '</li>'
         msg += '<li>Simulation: ' + str(settings['SIMULATE']) + '</li>'
         msg += '<li>s0Blink: '    + str(settings['s0Blink'])  + '</li>'
         msg += '</ul>'
@@ -158,7 +160,7 @@ def apiSetConfig():
         saveConfig(settings['configFileName'])
         return msg       
     else:
-        return template('config.tpl', energy=old, path=settings['url'], debug=settings['DEBUG'], simulate=settings['SIMULATE'], blink=settings['s0Blink'])
+        return template('config.tpl', energy=old, path=settings['url'], debug=settings['DEBUG'], hw=settings['HW'], simulate=settings['SIMULATE'], blink=settings['s0Blink'])
 
 
 ### Start built-in server for dev/debug

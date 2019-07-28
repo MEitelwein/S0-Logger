@@ -19,6 +19,17 @@
 
     <p>
     <fieldset>
+        <legend> Microcontroller Hardware </legend>  
+        <input type="radio" id="chip" name="hw" value="CHIP" {{"checked" if hw=="CHIP" else ""}}>
+        <label for="chip"> C.H.I.P.</label>
+        <input type="radio" id="raspi" name="hw" value="RASPI" {{"checked" if hw=="RASPI" else ""}}>
+        <label for="raspi"> Raspberry Pi</label>
+    </fieldset>
+    </label>
+    </p>
+
+    <p>
+    <fieldset>
         <legend> Simulation </legend>
         <input type="radio" id="true" name="simulate" value="True" {{"checked" if simulate else ""}}>
         <label for="true"> enabled</label>
