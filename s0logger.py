@@ -1,12 +1,12 @@
 #!/usr/bin/python
 # Using port of Adafruit GPIO library 
-# for CHIP microcontroller
+# for Raspberry or C.H.I.P. microcontroller
 # 
 # Author: Michael Eitelwein (michael@eitelwein.net)
-#         https://github.com/MEitelwein/S0-Logger
+#         https://gitlab.eitelwein.net/MEitelwein/S0-Logger
 #
 # S0 enabled electricity meters send a S0 signal every tickPerkWh
-# The S0 tick is detected at the GPIO pin of the CHIP device
+# The S0 tick is detected at the GPIO pin of the microcontroller
 # as a rising edge on s0Pin
 # The GPIO library triggers S0Triger() based on raising edge 
 # and exports values via REST API as a JSON structure
@@ -19,6 +19,7 @@
 # Processing of the s0 signal is indicated by the C.H.I.P.
 # status LED going on and off during GPIO processing
 # Configs in file /etc/s0logger (will be generated if not existing)
+#   hw          = CHIP | RASPI      select microcontroller type
 #   debug       = True | False      Print DEBUG output
 #   simulate    = True | False      Do not use GPIO HW but simulate S0 signals
 #   pidfile     = <path/pidfile>    Where to store pid
@@ -48,6 +49,7 @@ from bottle import Bottle, route, run, template, request
 app      = Bottle()
 # Define default settings
 settings = {
+    'HW'             : 'CHIP'
     'DEBUG'          : True,
     'SIMULATE'       : True,
     'configFileName' : 'config/s0logger.conf',
@@ -171,13 +173,23 @@ def apiServer(ip, p, dbg):
 def statusLED(mode):
     if settings['s0Blink']:
         if ( mode == 1 ):
-            # Switch C.H.I.P. status LED on
-            if not settings['SIMULATE']:
-                os.system('/usr/sbin/i2cset -f -y 0 0x34 0x93 0x1')
+            if ( settings['HW'] == 'CHIP' ):
+                # Switch C.H.I.P. status LED on
+                if not settings['SIMULATE']:
+                    os.system('/usr/sbin/i2cset -f -y 0 0x34 0x93 0x1')
+            elif ( settings['HW'] == 'RASPI' ):
+                # nothing implemented yet for Raspi
+            else:
+                logMsg("Unknown hardware platform " + settings['HW'])
         else:
-            # Switch C.H.I.P. status LED off
-            if not settings['SIMULATE']:
-                os.system('/usr/sbin/i2cset -f -y 0 0x34 0x93 0x0')
+            if ( settings['HW'] == 'CHIP' ):
+                # Switch C.H.I.P. status LED off
+                if not settings['SIMULATE']:
+                    os.system('/usr/sbin/i2cset -f -y 0 0x34 0x93 0x0')
+            elif ( settings['HW'] == 'RASPI' ):
+                # nothing implemented yet for Raspi
+            else:
+                logMsg("Unknown hardware platform " + settings['HW'])
 
 
 ### Function being called by GPIO edge detection
@@ -213,7 +225,12 @@ def S0Trigger(channel):
 def configGPIO(pin):
     if not settings['triggerActive']:
         if not settings['SIMULATE']:
-            import CHIP_IO.GPIO as GPIO
+            if ( settings['HW'] == 'CHIP' ):
+                import CHIP_IO.GPIO as GPIO
+            elif ( settings['HW'] == 'RASPI' ):
+                import RPi.GPIO as GPIO
+            else:
+                logMsg("Unknown hardware platform " + settings['HW'])
             # Config GPIO pin for pull down
             # and detection of rising edge
             GPIO.cleanup(pin)
@@ -254,6 +271,9 @@ def loadConfig(configFileName):
     if config.has_option('Config', 'DEBUG'):
         settings['DEBUG']    = config.get('Config', 'DEBUG').lower() == 'true'
 
+        if config.has_option('Config', 'HW'):
+        settings['HW']       = config.get('Config', 'HW')
+
     if config.has_option('Config', 'SIMULATE'):
         settings['SIMULATE'] = config.get('Config', 'SIMULATE').lower() == 'true'
 
@@ -292,6 +312,7 @@ def saveConfig(configFileName):
         config.add_section('Cache')
 
     config.set('Config', 'DEBUG',       str(settings['DEBUG']))
+    config.set('Config', 'HW',          str(settings['HW']))
     config.set('Config', 'SIMULATE',    str(settings['SIMULATE']))
     config.set('Config', 's0Blink',     str(settings['s0Blink']))
     config.set('Config', 'port',        str(settings['port']))
