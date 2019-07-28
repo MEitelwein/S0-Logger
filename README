@@ -73,8 +73,7 @@ Installation and Configuration
 Whith standard Debian running on the CHIP device, just log in as your favorite
 user who is equipped with sudo rights.
 
-1.) Install CHIP_IO library for CHIP. Many thanks to Robert Wolterman
-    for creating this library.
+0.) Basic installation and setup, e.g. apache2 and python
 
       $ sudo apt-get update
       $ sudo mkdir /var/log/apache2
@@ -84,6 +83,10 @@ user who is equipped with sudo rights.
       $ sudo apt-get install libapache2-mod-wsgi apache2-dev curl
       $ sudo apt-get install build-essential python-dev python-pip 
       $ sudo apt-get install python-smbus flex bison chip-dt-overlays
+
+1.) Install CHIP_IO library for CHIP. Many thanks to Robert Wolterman
+    for creating this library.
+
       $ git clone https://github.com/xtacocorex/CHIP_IO
       $ cd CHIP_IO
       $ sudo python setup.py install
