@@ -109,7 +109,7 @@ user who is equipped with sudo rights.
 
       $ sudo apt-get update
       $ sudo mkdir /var/log/apache2
-      $ sudo echo "tmpfs   /var/log/apache2   tmpfs  defaults  0  1" >> /etc/fstab
+      $ sudo echo "tmpfs /var/log/apache2 tmpfs defaults,uid=root,gid=adm,mode=0750 0 1" >> /etc/fstab
       $ sudo mount -a
       $ sudo apt install python3 git python3-bottle apache2 
       $ sudo apt install libapache2-mod-wsgi-py3 apache2-dev curl
