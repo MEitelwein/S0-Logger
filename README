@@ -94,7 +94,7 @@ The pull-down resistor should have between 2k to 5k Ohm. The value actually
 does not matter too much as the pin is pulled to 3V3 only for 30ms to 90 ms 
 depending on the design of the powermeter.
 
-As a power source I use a stabilized 5V source like this one
+Use a stabilized 5V power source for your microcontroller. I use this one:
   Mean Well Hutschienennetzteil DR-15-5 , 5V
   http://www.elv.de/mean-well-hutschienennetzteil-dr-15-5-5v.html
 
